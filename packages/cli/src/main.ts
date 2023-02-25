@@ -38,8 +38,10 @@ async function run() {
   const userSnippets = getSnippets(userFiles.userSnippetFiles);
 
   const baseHtml = executableTemplate(getTemplateData({ enrichedSources, config }));
+  console.log(baseHtml, "what basic");
   const userCustomizedHtml = renderUserSnippets({ baseHtml, userSnippets, config });
   const atom = renderAtom({ enrichedSources, config });
+  console.log(atom, "atommmm");
   await writeFiles({ html: userCustomizedHtml, atom });
 
   const copyPlan = getCopyStaticPlan({

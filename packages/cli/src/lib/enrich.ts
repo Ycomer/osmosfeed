@@ -1,6 +1,7 @@
 import cheerio from "cheerio";
 import { performance } from "perf_hooks";
 import Parser from "rss-parser";
+import { XMLParser } from "fast-xml-parser";
 import { downloadTextFile } from "../utils/download";
 import { getFirstNonNullItem } from "../utils/get-first-non-null-item";
 import { htmlToText } from "../utils/html-to-text";
@@ -78,18 +79,20 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichedSource 
       return null;
     }
   }
-
   const rawFeed = await parser.parseString(xmlString)!.catch((err) => {
     console.error(`[enrich] Parse source failed ${source.href}`);
     throw err;
   });
+  // const rawFeed = parser.parse(xmlString);
+  console.log(rawFeed, "rawFeed");
   const feed = normalizeFeed(rawFeed, source.href);
   const items = feed.items;
   const now = Date.now();
 
   const cachedArticles = cache.sources.find((cachedSource) => cachedSource.feedUrl === source.href)?.articles ?? [];
 
-  const newItems = items.filter((item) => cachedArticles.every((article) => article.link !== item.link));
+  // const newItems = items.filter((item) => cachedArticles.every((article) => article.link !== item.link));
+  const newItems = items;
 
   const newArticlesAsync: Promise<EnrichedArticle | null>[] = newItems.map(async (item) => {
     const title = item.title ?? "Untitled";
@@ -214,9 +217,7 @@ const unenrichableItem: EnrichItemResult = {
 function getSummary(input: GetSummaryInput): string {
   return getFirstNonNullItem(
     input.parsedItem.summary,
-    input.parsedItem.content
-      ? trimWithThreshold(input.parsedItem.content, SUMMARY_TRIM_ACTIVATION_THRESHOLD, SUMMARY_TRIM_TO_LENGTH)
-      : null,
+    input.parsedItem.content ? input.parsedItem.content : null,
     input.enrichedItem.description,
     ""
   );

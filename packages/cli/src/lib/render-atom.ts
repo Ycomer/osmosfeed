@@ -38,7 +38,7 @@ export function renderAtom({ enrichedSources, config }: RenderAtomInput): string
     title: config.siteTitle,
     updated: new Date(),
     id: feedId,
-    generator: `osmosfeed ${cliVersion}`,
+    generator: `SophoNewsFeed ${cliVersion}`,
     link: siteUrl ?? INDEX_FILENAME,
     feedLinks,
     description: "",

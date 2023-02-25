@@ -39,7 +39,7 @@ function getDefaultConfig(): Config {
     sources: [],
     cacheUrl: null,
     cacheMaxDays: 30,
-    siteTitle: "osmos::feed",
+    siteTitle: "SophoNews::feed",
     timezone: null,
     timezoneOffset: 0,
     githubServerUrl: process.env.GITHUB_SERVER_URL ?? null,

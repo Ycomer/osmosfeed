@@ -32,6 +32,7 @@ async function downloadHelper(url: string, config: DownloadHelperConfig): Promis
 
   try {
     const response = await axios.get(url, { timeout: timeoutInMs });
+    console.log(response, "responseresponseresponseasduak");
     const responseText = response.data;
     if (response.status !== 200) {
       throw new Error(`[download] Error download ${url}, status ${response.status}`);
