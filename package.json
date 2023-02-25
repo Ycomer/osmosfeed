@@ -1,8 +1,8 @@
 {
-  "name": "root",
+  "name": "sophonewfeed",
   "private": true,
   "version": "0.0.1",
-  "description": "Monorepo root",
+  "description": "feed generate tools for sophonew",
   "directories": {
     "doc": "docs"
   },
@@ -14,15 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/osmoscraft/osmosfeed.git"
+    "url": "git+https://github.com/sophonLabs/sophonews.git"
   },
   "keywords": [],
-  "author": "osmoscraft",
+  "author": "sophonLabs",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/osmoscraft/osmosfeed/issues"
+    "url": "https://github.com/sophonLabs/sophonews/issues"
   },
-  "homepage": "https://github.com/osmoscraft/osmosfeed#readme",
+  "homepage": "https://github.com/sophonLabs/sophonews#readme",
   "workspaces": [
     "./packages/*"
   ]
