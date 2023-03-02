@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "For developement and testing",
   "scripts": {
-    "dev": "osmosfeed",
-    "build": "osmosfeed",
+    "dev": "feed",
+    "build": "feed",
     "clean": "rm -rf public"
   },
   "author": "osmoscraft",

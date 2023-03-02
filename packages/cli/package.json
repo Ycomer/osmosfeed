@@ -1,6 +1,6 @@
 {
-  "name": "@osmoscraft/osmosfeed",
-  "version": "1.15.1",
+  "name": "@ycomer/feed",
+  "version": "1.15.3",
   "description": "",
   "scripts": {
     "dev": "node scripts/build.js",
@@ -11,22 +11,25 @@
   },
   "main": "main.js",
   "bin": {
-    "osmosfeed": "main.js"
+    "feed": "main.js"
   },
   "files": [
     "bin"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/osmoscraft/osmosfeed.git"
+    "url": "git+https://github.com/Ycomer/osmosfeed.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/osmoscraft/osmosfeed/issues"
+    "url": "https://github.com/Ycomer/osmosfeed/issues"
   },
-  "homepage": "https://osmoscraft.org",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "homepage": "",
   "dependencies": {
     "axios": "^0.27.2",
     "cheerio": "^1.0.0-rc.10",
