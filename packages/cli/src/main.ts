@@ -27,6 +27,7 @@ async function run() {
 
   const cache = await getCache({ cacheUrl: config.cacheUrl, localCacheFile: systemFiles.localCacheFile });
 
+  // 这块不对，需要核心处理下
   const enrichedSources: EnrichedSource[] = (
     await Promise.all(config.sources.map((source) => enrich({ source, cache, config })))
   ).filter(isNotNull);

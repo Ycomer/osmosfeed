@@ -7,6 +7,7 @@ import { getFirstNonNullItem } from "../utils/get-first-non-null-item";
 import { htmlToText } from "../utils/html-to-text";
 import { trimWithThreshold } from "../utils/trim-with-threshold";
 import type { Cache } from "./get-cache";
+import { unionWithOutComparator } from "../utils/url";
 import type { Config, Source } from "./get-config";
 import { normalizeFeed, ParsedFeedItem } from "./normalize-feed";
 
@@ -125,10 +126,8 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichedSource 
   });
 
   const newArticles = (await Promise.all(newArticlesAsync)).filter((article) => article !== null) as EnrichedArticle[];
-
-  const combinedArticles = [...newArticles, ...cachedArticles];
-
-  const renderedArticles = combinedArticles
+  const combinedUniqueArticles = unionWithOutComparator(newArticles, cachedArticles);
+  const renderedArticles = combinedUniqueArticles
     .filter((item) => {
       const elapsedDate = Math.round((now - new Date(item.publishedOn).getTime()) / MILLISECONDS_PER_DAY);
       return elapsedDate < config.cacheMaxDays && elapsedDate >= 0;

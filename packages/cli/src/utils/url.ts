@@ -1,3 +1,4 @@
+import { EnrichedArticle } from "../lib/enrich";
 export function getHostnameFromUrl(url?: string | null): string | null {
   if (!url) return null;
 
@@ -16,4 +17,9 @@ export function resolveRelativeUrl(targetUrl: string, baseUrl: string): string |
   } catch {
     return null;
   }
+}
+
+export function unionWithOutComparator<T>(array: EnrichedArticle[], other: EnrichedArticle[]): EnrichedArticle[] {
+  const uniqueSet = new Set(other.map((item) => item.link));
+  return [...other, ...array.filter((item) => !uniqueSet.has(item.link))];
 }

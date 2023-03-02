@@ -18,8 +18,8 @@ export async function setCache(data: Cache) {
   console.log(`[cache] Post-build cache written: ${cacheOutputPath}`);
 }
 
-// 递归去除多层数组中的重复数据，其中最里面的数组是个对象数组
-function removeDuplicateContent(data: Cache) {
+// 去除多层数组中的重复数据，其中最里面的数组是个对象数组
+export function removeDuplicateContent(data: Cache) {
   const { sources } = data;
   const result = sources.map((source) => {
     const { articles } = source;
