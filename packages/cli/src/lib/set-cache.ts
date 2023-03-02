@@ -2,7 +2,6 @@ import path from "path";
 import { PUBLIC_ROOT_DIR } from "./path-constants";
 import type { Cache } from "./get-cache";
 import { mkdirAsync, writeFileAsync } from "../utils/fs";
-import type { EnrichedArticle } from "./enrich";
 
 const CACHE_FILENAME = "cache.json";
 
