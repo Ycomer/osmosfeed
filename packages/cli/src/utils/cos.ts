@@ -6,8 +6,8 @@ const config = {
   Region: "ap-shanghai",
 };
 const cos = new COS({
-  SecretId: "AKID60lMmDPM4YnoY1ECwRFo9GAuQnulNn3H",
-  SecretKey: "82gAXpw871kFXa9XigS1RehX9XgbIkz0",
+  SecretId: "",
+  SecretKey: "",
 });
 
 function putObject(content: any, keyname: string) {
