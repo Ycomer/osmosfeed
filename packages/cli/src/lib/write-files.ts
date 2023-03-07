@@ -2,22 +2,27 @@ import path from "path";
 import { PUBLIC_ROOT_DIR } from "./path-constants";
 import { FEED_FILENAME, INDEX_FILENAME } from "./render-atom";
 import { mkdirAsync, writeFileAsync } from "../utils/fs";
+import { EnrichedArticle } from "./enrich";
 
 export interface RenderFilesInput {
-  html: string;
+  detail: EnrichedArticle[];
   atom: string;
 }
 
 export async function writeFiles(input: RenderFilesInput) {
-  const { html, atom } = input;
+  let renderDetailAsync: Promise<string>[] = [];
+  const { detail, atom } = input;
 
   await mkdirAsync(PUBLIC_ROOT_DIR, { recursive: true });
+  detail.map((item) => {
+    const dataString = JSON.stringify(item, undefined, 2);
+    const detailPath = path.resolve(`${PUBLIC_ROOT_DIR}/${item.id}.json`);
+    renderDetailAsync.push(writeFileAsync(detailPath, dataString).then(() => detailPath));
+  });
 
-  const indexPath = path.resolve(`${PUBLIC_ROOT_DIR}/${INDEX_FILENAME}`);
+  console.log(renderDetailAsync, "renderDetailAsyncrenderDetailAsync");
   const atomPath = path.resolve(`${PUBLIC_ROOT_DIR}/${FEED_FILENAME}`);
+  const renderAtomAsync = writeFileAsync(atomPath, atom).then(() => atomPath);
 
-  const renderHtmlAsync = writeFileAsync(indexPath, html).then(() => console.log(`[write-file] Wrote:`, indexPath));
-  const renderAtomAsync = writeFileAsync(atomPath, atom).then(() => console.log(`[write-file] Wrote:`, atomPath));
-
-  return Promise.all([renderHtmlAsync, renderAtomAsync]);
+  return Promise.all([...renderDetailAsync, renderAtomAsync]);
 }

@@ -5,6 +5,10 @@ import { XMLParser } from "fast-xml-parser";
 import { downloadTextFile } from "../utils/download";
 import { getFirstNonNullItem } from "../utils/get-first-non-null-item";
 import { htmlToText } from "../utils/html-to-text";
+import { generateRandomId } from "../utils/random";
+import { isTopPin } from "../utils/top";
+import { isHotArticle } from "../utils/hot";
+import { getTagsByTitle } from "../utils/tags";
 import { trimWithThreshold } from "../utils/trim-with-threshold";
 import type { Cache } from "./get-cache";
 import { unionWithOutComparator } from "../utils/url";
@@ -17,13 +21,24 @@ const SUMMARY_TRIM_TO_LENGTH = 800; // characters
 
 export interface EnrichedArticle {
   id: string;
-  author: string | null;
+  author?: {
+    name: string;
+    logo: string | null;
+    id: string | null;
+  };
+  isTop: boolean;
+  hot: {
+    isHot: boolean;
+    hotScore: number;
+  };
+  type: string;
   description: string;
   link: string;
   publishedOn: string;
   title: string;
   wordCount: number | null;
   imageUrl: string | null;
+  tags: (string | number)[];
   enclosure?: {
     url: string;
     type: string;
@@ -36,6 +51,7 @@ export interface EnrichedArticle {
 
 export interface EnrichedSource {
   title: string | null;
+  logo: string | null;
   feedUrl: string;
   siteUrl: string | null;
   articles: EnrichedArticle[];
@@ -85,16 +101,13 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichedSource 
     throw err;
   });
   // const rawFeed = parser.parse(xmlString);
-  console.log(rawFeed, "rawFeed");
   const feed = normalizeFeed(rawFeed, source.href);
   const items = feed.items;
   const now = Date.now();
 
   const cachedArticles = cache.sources.find((cachedSource) => cachedSource.feedUrl === source.href)?.articles ?? [];
 
-  // const newItems = items.filter((item) => cachedArticles.every((article) => article.link !== item.link));
-  const newItems = items;
-
+  const newItems = items.filter((item) => cachedArticles.every((article) => article.link !== item.link));
   const newArticlesAsync: Promise<EnrichedArticle | null>[] = newItems.map(async (item) => {
     const title = item.title ?? "Untitled";
     const link = item.link;
@@ -105,13 +118,24 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichedSource 
     const enrichedItem = isItemEnrichable(item) ? await enrichItem(link) : unenrichableItem;
     const description = getSummary({ parsedItem: item, enrichedItem });
     const publishedOn = item.isoDate ?? enrichedItem.publishedTime?.toISOString() ?? new Date().toISOString();
-    const id = item.guid ?? link;
-    const author = item.creator ?? null;
+    const id = generateRandomId();
+    const author = { name: source.title, logo: source.logo, id: generateRandomId(16) };
     const imageUrl = item.imageUrl ?? enrichedItem.imageUrl ?? null;
-
+    // 用来区分文章类型 0首页、1深度、2快讯（暂定）
+    const type = "0";
+    // 是否置顶
+    const isTop = isTopPin(source.title);
+    // 热门文章
+    const hot = isHotArticle(source.title);
+    // 文章标签 快速过滤
+    const tags = getTagsByTitle(item.title);
     const enrichedArticle: EnrichedArticle = {
       id,
       author,
+      isTop,
+      hot,
+      type,
+      tags,
       description,
       link,
       publishedOn,
@@ -145,7 +169,8 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichedSource 
   );
 
   return {
-    title: feed.title ?? null,
+    title: source.title ?? null,
+    logo: source.logo ?? null,
     feedUrl: source.href,
     siteUrl: feed.link ?? null,
     articles: renderedArticles,
@@ -157,6 +182,7 @@ export interface EnrichItemResult {
   wordCount: number | null;
   publishedTime: Date | null;
   imageUrl: string | null;
+  logoUrl: string | null;
 }
 
 async function enrichItem(link: string): Promise<EnrichItemResult> {
@@ -188,12 +214,14 @@ async function enrichItem(link: string): Promise<EnrichItemResult> {
     }
 
     const imageUrl = $(`meta[property="og:image"]`).attr("content") ?? null;
+    const logoUrl = $('link[rel="icon"]').attr("href") ?? null;
 
     const enrichItemResult: EnrichItemResult = {
       description,
       wordCount,
       publishedTime,
       imageUrl,
+      logoUrl,
     };
 
     return enrichItemResult;
@@ -209,6 +237,7 @@ const unenrichableItem: EnrichItemResult = {
   wordCount: null,
   publishedTime: null,
   imageUrl: null,
+  logoUrl: null,
 };
 
 // TODO improve summary accuracy

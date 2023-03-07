@@ -38,7 +38,6 @@ const systemStaticFileList = ["favicon.ico"];
 export async function discoverSystemFiles(): Promise<SystemFiles> {
   const configFile = await getParsableFile(path.resolve(CONFIG_FILENAME)).catch(() => null);
   console.log(`[system-file] Config: ${configFile?.path}`);
-
   const localCacheFile = await getParsableFile(path.resolve(PUBLIC_ROOT_DIR, CACHE_FILENAME)).catch(() => null);
   console.log(`[system-file] Local cache: ${localCacheFile?.path}`);
 
@@ -89,7 +88,7 @@ export async function discoverUserFiles(): Promise<UserFiles> {
   };
 }
 
-async function getParsableFile(filePath: string): Promise<ParsableFile> {
+export async function getParsableFile(filePath: string): Promise<ParsableFile> {
   const rawText = await readFileAsync(filePath, "utf-8");
   return {
     filename: path.basename(filePath),

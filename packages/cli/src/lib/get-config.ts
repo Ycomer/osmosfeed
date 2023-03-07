@@ -2,9 +2,12 @@ import yaml from "js-yaml";
 import type { ParsableFile } from "./discover-files";
 import { normalizeUrl } from "./normalize-url";
 import { getOffsetFromTimezoneName } from "./time";
+import { REMOTE_CACHE_FILENAME } from "./base";
 
 export interface Source {
   href: string;
+  title: string;
+  logo: string;
 }
 
 export interface Config {
@@ -37,7 +40,7 @@ export async function getConfig(configFile: ParsableFile | null): Promise<Config
 function getDefaultConfig(): Config {
   return {
     sources: [],
-    cacheUrl: null,
+    cacheUrl: REMOTE_CACHE_FILENAME,
     cacheMaxDays: 30,
     siteTitle: "SophoNews::feed",
     timezone: null,

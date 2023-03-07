@@ -1,3 +1,4 @@
+const dayjs = require("dayjs");
 const MINUTES_PER_MS = 1000 * 60;
 
 export function getTimeWithOffset(baseTimestamp: number, offsetInMinutes: number) {
@@ -21,4 +22,8 @@ export function getOffsetFromTimezoneName(timezone: string) {
     Math.floor(new Date(new Date().toLocaleString("sv", { timeZone: "UTC" })).getTime() / MINUTES_PER_MS) -
     Math.floor(new Date(new Date().toLocaleString("sv", { timeZone: timezone })).getTime() / MINUTES_PER_MS)
   );
+}
+
+export function getCurrentTimestamps() {
+  return dayjs();
 }

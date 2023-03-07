@@ -5,4 +5,12 @@
 # siteTitle: dev - osmosfeed
 timezone: America/Los_Angeles
 sources:
-  - href: https://rss.panewslab.com/zh/gtimg/rss
+  - title: PANews
+    href: https://rss.panewslab.com/zh/gtimg/rss
+    logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
+  # - title: ChainFeeds
+  #   href: https://chainfeeds.xyz/rss
+  #   logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
+  # - title: SophonLabs
+  #   href: https://chainfeeds.xyz/rss
+  #   logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
