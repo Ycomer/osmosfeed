@@ -1,26 +1,28 @@
 export const queryFlagStatus = (name: string, publishon: string) => {
   return {
     TableName: name,
-    Key: {
-      publishon: publishon,
+    KeyConditionExpression: "publishon = :publishon",
+    ExpressionAttributeValues: {
+      ":publishon": { S: publishon },
     },
     ProjectionExpression: "flag",
   };
 };
 
-export const updateFlagStatus = (name: string, publishon: string, value: number) => {
+export const updateFlagStatus = (name: string, publishon: string, id: string, value: number) => {
   return {
     TableName: name,
     Key: {
-      publishon: { S: publishon },
+      publishon: publishon,
+      id: id,
     },
-    UpdateExpression: "set #flag = :f",
+    ProjectionExpression: "#flag",
     ExpressionAttributeNames: {
       "#flag": "flag",
     },
+    UpdateExpression: "set #flag = :f",
     ExpressionAttributeValues: {
-      ":f": { N: value },
+      ":f": value,
     },
-    ReturnValues: "UPDATED_NEW",
   };
 };

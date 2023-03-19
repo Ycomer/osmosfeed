@@ -189,12 +189,12 @@ export interface News {
    * 当前文章的语种
    * 0 中文 1 英文 以此类推
    */
-  lang: string;
+  lang: number;
   /**
    * 当前文章插入数据库的状态
    * 默认0 未插入 1 插入成功 2 插入失败
    */
-  flag: string;
+  flag: number;
 }
 
 export interface User {
@@ -368,6 +368,8 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichSchema | 
       imgUrl,
       apppush: 0,
       status: 1,
+      lang: source.lang,
+      flag: 0,
       createTime: getCurrentTime(),
       updateTime: getCurrentTime(),
     };

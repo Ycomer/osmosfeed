@@ -7,6 +7,7 @@ export interface Source {
   title: string;
   logo: string;
   type: number;
+  lang: number;
 }
 
 export interface Config {

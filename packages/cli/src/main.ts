@@ -6,8 +6,9 @@ import { getConfig } from "./lib/get-config";
 import { enrich, EnrichSchema, EnrichSchemaArticle, enrichArticleItem } from "./lib/enrich";
 import { cliVersion } from "./utils/version";
 import { isNotNull } from "./utils/is-not-null";
-import { putObject } from "./utils/s3";
-import { checkTableExist, putDataToSpecificTable } from "./lib/awsDynamodb";
+import { putArticleListToS3, putNewsListToS3 } from "./utils/s3";
+import { checkTableExist, putDatasToDB } from "./lib/awsDynamodb";
+import { TableName } from "./constant";
 require("dotenv").config();
 
 async function run() {
@@ -31,12 +32,10 @@ async function run() {
   // 获取所有的文章（通过爬虫）
 
   // 上传到DynamoDB
-  detailDataList.map(async (item) => {
-    await putDataToSpecificTable(item, "NEWS");
-  });
+  await putDatasToDB(detailDataList, TableName.NEWS);
 
-  await putArticleListToS3(detailDataList);
-  await puArticleDetailToS3(detailDataList);
+  // 上传到S3
+  // await putNewsListToS3(detailDataList, "NEWS");
 
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
   console.log(`[main] Finished build in ${durationInSeconds} seconds`);

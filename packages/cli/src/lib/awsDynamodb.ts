@@ -4,11 +4,12 @@ import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { ArticleParams, NewsParams, UsersParams } from "../utils/databaseScheme";
 import { ArticleItem, NewsItem, CustmorItem } from "../utils/dataBaseValue";
 import { queryFlagStatus, updateFlagStatus } from "../utils/dataBaseOperation";
+import { News } from "./enrich";
 
 export const TableList = [
   { name: "ARTICLE", param: ArticleParams, item: (value: any) => ArticleItem(value) },
   { name: "NEWS", param: NewsParams, item: (value: any) => NewsItem(value) },
-  { name: "USERS", param: UsersParams, item: (value: any) => CustmorItem(value) },
+  { name: "USER", param: UsersParams, item: (value: any) => CustmorItem(value) },
 ];
 
 export const checkTableExist = async () => {
@@ -66,12 +67,10 @@ export const putDataToSpecificTable = async (value: any, tableName: string) => {
         TableName: tableName,
         Item: table.item(value),
       });
-      // 如果插入成功，将表中的flag字段更新为1
-      await updateTableSpecificData(tableName, value.publishon, 1);
+      console.log("数据插入成功");
     } catch (error) {
+      console.log(error, "write error");
       // 处理插入失败的情况
-      // 失败后将A中的flag字段更新为2
-      await updateTableSpecificData(tableName, value.publishon, 2);
     }
   } else {
     console.error(`Table ${tableName} not found in TableList.`);
@@ -81,8 +80,8 @@ export const putDataToSpecificTable = async (value: any, tableName: string) => {
 /**
  * @param params {Object} the value to be update into the database
  */
-export const updateTableSpecificData = async (name: string, pushlishon: string, value: number) => {
-  const params = updateFlagStatus(name, pushlishon, value);
+export const updateTableSpecificData = async (name: string, pushlishon: string, id: string, value: number) => {
+  const params = updateFlagStatus(name, pushlishon, id, value);
   try {
     const data = await ddbDocClient.send(new UpdateCommand(params));
     console.log("Success - item added or updated", data);
@@ -100,8 +99,22 @@ export const querySpecificTableData = async (name: string, pushlishon: string) =
   const params = queryFlagStatus(name, pushlishon);
   try {
     const data = await ddbClient.send(new QueryCommand(params));
-    return data;
+    return data.Count;
   } catch (err) {
     console.error(err);
+  }
+};
+
+export const putDatasToDB = async (list: News[], name: string) => {
+  for (const item of list) {
+    try {
+      await putDataToSpecificTable(item, name);
+      // 如果插入成功，将表中的flag字段更新为1
+      await updateTableSpecificData(name, item.publishOn, item.id, 1);
+    } catch (error) {
+      console.log(error);
+      // 失败后将A中的flag字段更新为2
+      await updateTableSpecificData(name, item.publishOn, item.id, 2);
+    }
   }
 };

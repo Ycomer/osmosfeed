@@ -23,7 +23,7 @@ export const ArticleItem = (item: Article) => {
     flag: item.flag,
     ttitle: item.tTitle,
     tsubtitle: item.tSubTitle,
-    lastudatetime: item.lastUdateTime,
+    lastudatetime: item.lastUpdateTime,
     authorid: item.authorid,
     authorname: item.authorName,
     authoravatar: item.authorAvatar,
