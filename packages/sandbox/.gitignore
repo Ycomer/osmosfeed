@@ -10,3 +10,4 @@ public
 # Directories that user can add. We can add them for testing but don't check in as the changes are insignificant
 static
 includes
+.env

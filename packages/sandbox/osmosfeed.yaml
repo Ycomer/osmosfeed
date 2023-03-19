@@ -3,14 +3,19 @@
 # cacheUrl: https://dailyread.netlify.app/cache.json
 # cacheMaxDays: 30
 # siteTitle: dev - osmosfeed
+# todo
+
 timezone: America/Los_Angeles
 sources:
+  - title: TokenInsight
+    href: https://tokeninsight.com/rss/zh
+    logo: https://s2.tokeninsight.com/frontend/images/favicon.png
+    type: 0
+  - title: Coingape
+    href: https://coingape.com/feed/
+    logo: https://cdn.coingape.com/wp-content/uploads/2021/08/25124149/logo.png
+    type: 0
   - title: PANews
-    href: https://rss.panewslab.com/zh/gtimg/rss
+    href: https://rss.panewslab.com/zh/tvsq/rss
     logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
-  # - title: ChainFeeds
-  #   href: https://chainfeeds.xyz/rss
-  #   logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
-  # - title: SophonLabs
-  #   href: https://chainfeeds.xyz/rss
-  #   logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
+    type: 0
