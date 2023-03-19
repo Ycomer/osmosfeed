@@ -1,25 +1,16 @@
 import yaml from "js-yaml";
 import type { ParsableFile } from "./discover-files";
 import { normalizeUrl } from "./normalize-url";
-import { getOffsetFromTimezoneName } from "./time";
-import { REMOTE_CACHE_FILENAME } from "./base";
 
 export interface Source {
   href: string;
   title: string;
   logo: string;
+  type: number;
 }
 
 export interface Config {
   sources: Source[];
-  cacheUrl: string | null;
-  cacheMaxDays: number;
-  siteTitle: string;
-  timezone: string | null;
-  timezoneOffset: number;
-  githubServerUrl: string | null;
-  githubRepository: string | null;
-  githubRunId: string | null;
 }
 
 export async function getConfig(configFile: ParsableFile | null): Promise<Config> {
@@ -31,7 +22,6 @@ export async function getConfig(configFile: ParsableFile | null): Promise<Config
       ...source,
       href: normalizeUrl(source.href),
     })),
-    timezoneOffset: mergedConfig.timezone ? getOffsetFromTimezoneName(mergedConfig.timezone) : 0,
   };
   console.log(`[load-config] Effective config: `, effectiveConfig);
   return effectiveConfig;
@@ -40,14 +30,6 @@ export async function getConfig(configFile: ParsableFile | null): Promise<Config
 function getDefaultConfig(): Config {
   return {
     sources: [],
-    cacheUrl: REMOTE_CACHE_FILENAME,
-    cacheMaxDays: 30,
-    siteTitle: "SophoNews::feed",
-    timezone: null,
-    timezoneOffset: 0,
-    githubServerUrl: process.env.GITHUB_SERVER_URL ?? null,
-    githubRepository: process.env.GITHUB_REPOSITORY ?? null,
-    githubRunId: process.env.GITHUB_RUN_ID ?? null,
   };
 }
 

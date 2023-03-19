@@ -1,35 +1,12 @@
 import { htmlToText } from "../utils/html-to-text";
 import { cliVersion } from "../utils/version";
-import type { EnrichedArticle, EnrichedSource } from "./enrich";
+import type { EnrichedArticle, EnrichSchema } from "./enrich";
 import type { Config } from "./get-config";
 import { FEED_FILENAME } from "./render-atom";
 import { getDateFromIsoString, getIsoTimeWithOffset } from "./time";
 
-export interface GetTemplateDataOutput {
-  /** Array of dates, each containing the content published on the date */
-  dates: TemplateDates[];
-  /** Array of source, each containing the content published from the source */
-  sources: TemplateSource[];
-  /** Array of articles, most recent first */
-  articles: TemplateArticle[];
-
-  /** npm package version of the builder */
-  cliVersion: string;
-  /** URL for the generated atom feed */
-  feedHref: string;
-  /** URL for the osmosfeed project */
-  projectUrl: string;
-  /** ISO timestamp for the build */
-  siteBuildTimestamp: string;
-
-  /** URL to the GitHub Action run. Available only when using GitHub Action */
-  githubRunUrl: string | null;
-
-  siteTitle: string;
-}
-
 interface TemplateArticle extends EnrichedArticle {
-  source: EnrichedSource;
+  source: EnrichSchema;
   /**
    * @deprecated This date should only be used by the server internally.
    * Use `isoUtcPublishTime` for high-fidelity timestamp or `isoOffsetPublishDate` for grouping by dates
@@ -71,44 +48,15 @@ interface TemplateDates {
   sources: TemplateSourceBase[];
 }
 
-interface TemplateSourceBase extends EnrichedSource {
+interface TemplateSourceBase extends EnrichSchema {
   isoOffsetPublishDate: string;
   isoUtcPublishTime: string;
   articles: TemplateArticle[];
 }
 
 export interface GetTemplateDataInput {
-  enrichedSources: EnrichedSource[];
+  enrichedSources: EnrichSchema[];
   config: Config;
-}
-
-export function getTemplateData(input: GetTemplateDataInput): GetTemplateDataOutput {
-  const { githubServerUrl, githubRepository, githubRunId } = input.config;
-  const githubRunUrl =
-    githubServerUrl && githubRepository && githubRunId
-      ? `${input.config.githubServerUrl}/${input.config.githubRepository}/actions/runs/${input.config.githubRunId}`
-      : null;
-
-  return {
-    get dates() {
-      return organizeByDates(input);
-    },
-
-    get sources() {
-      return organizeBySources(input);
-    },
-
-    get articles() {
-      return organizeByArticles(input);
-    },
-
-    cliVersion,
-    githubRunUrl,
-    siteTitle: input.config.siteTitle,
-    siteBuildTimestamp: new Date().toISOString(),
-    projectUrl: `https://github.com/osmoscraft/osmosfeed`,
-    feedHref: FEED_FILENAME,
-  };
 }
 
 function getTimestamps(isoUtcTimestamp: string, timezoneOffset: number) {

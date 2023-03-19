@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "paths": {
+    "/news": {
+      "name": "/news",
+      "lambdaFunction": "sophonfeed02054a71",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-sophonfeed-dev-174703-authRole",
+      "UnauthRoleArn": "arn:aws:iam::801653543639:role/amplify-sophonfeed-dev-174703-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::801653543639:role/amplify-sophonfeed-dev-174703-authRole",
+      "Region": "ap-southeast-1",
+      "DeploymentBucketName": "amplify-sophonfeed-dev-174703-deployment",
+      "UnauthRoleName": "amplify-sophonfeed-dev-174703-unauthRole",
+      "StackName": "amplify-sophonfeed-dev-174703",
+      "StackId": "arn:aws:cloudformation:ap-southeast-1:801653543639:stack/amplify-sophonfeed-dev-174703/ad325460-c4a8-11ed-8518-025633f906b8",
+      "AmplifyAppId": "d52l8vw5o65ru"
+    },
+    "categories": {
+      "function": {
+        "sophonfeed02054a71": {}
+      },
+      "auth": {
+        "sophonfeed": {}
+      }
+    }
+  }
+}

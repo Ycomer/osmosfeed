@@ -18,3 +18,18 @@ export function htmlToText(htmlString: string): string {
 
   return entities.decodeHTML(str).trim();
 }
+
+export function removeHtmlEmptyTags(html: string) {
+  // 匹配空标签正则表达式
+  const emptyTagRegex = /<[^\/>][^>]*><\/[^>]+>|<[^\/>][^>]*\/>/gi;
+  // 使用 replace() 方法替换匹配到的空标签
+  const filteredHtml = html.replace(emptyTagRegex, (match) => {
+    if (match.trim() === "<br/>" || match.trim() === "<br>") {
+      return match;
+    } else {
+      return "";
+    }
+  });
+
+  return filteredHtml;
+}

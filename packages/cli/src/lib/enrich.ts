@@ -1,62 +1,248 @@
 import cheerio from "cheerio";
-import { performance } from "perf_hooks";
 import Parser from "rss-parser";
-import { XMLParser } from "fast-xml-parser";
 import { downloadTextFile } from "../utils/download";
 import { getFirstNonNullItem } from "../utils/get-first-non-null-item";
-import { htmlToText } from "../utils/html-to-text";
-import { generateRandomId } from "../utils/random";
+import { removeHtmlEmptyTags } from "../utils/html-to-text";
+import { hashUniqueId, getCurrentTime } from "../utils/random";
 import { isTopPin } from "../utils/top";
 import { isHotArticle } from "../utils/hot";
 import { getTagsByTitle } from "../utils/tags";
-import { trimWithThreshold } from "../utils/trim-with-threshold";
-import type { Cache } from "./get-cache";
-import { unionWithOutComparator } from "../utils/url";
+import { isBannerPin } from "../utils/isBanner";
 import type { Config, Source } from "./get-config";
 import { normalizeFeed, ParsedFeedItem } from "./normalize-feed";
-
-const MILLISECONDS_PER_DAY = 86400000; // 1000 * 60 * 60 * 24
-const SUMMARY_TRIM_ACTIVATION_THRESHOLD = 2048; // characters
-const SUMMARY_TRIM_TO_LENGTH = 800; // characters
-
-export interface EnrichedArticle {
+export interface EnrichSchema {
+  articles: News[];
+}
+export interface EnrichSchemaArticle {
+  articles: Article[];
+}
+// 这个地方是入库的字段，出库的时候不一定要全部出库，可以根据需要出库
+export interface Article {
+  /**
+   * 是否通过app推送 0未推送 1推送
+   */
+  apppush: number;
+  /**
+   * 文章作者id
+   */
+  authorid: String;
+  /**
+   * 文章作者标题
+   */
+  authorName: String;
+  /**
+   * 文章作者标题
+   */
+  authorAvatar: String;
+  /**
+   * 是否存在顶部swiper 0 不存在 1存在
+   */
+  bannerTime: number;
+  /**
+   * 热门文章 0 不是 1是
+   */
+  hotTime: number;
+  /**
+   * 文章唯一id
+   */
   id: string;
-  author?: {
-    name: string;
-    logo: string | null;
-    id: string | null;
-  };
-  isTop: boolean;
-  hot: {
-    isHot: boolean;
-    hotScore: number;
-  };
-  type: string;
-  description: string;
-  link: string;
-  publishedOn: string;
+  /**
+   * 文章图
+   */
+  imgUrl: string;
+  /**
+   * 发布时间
+   */
+  publishOn: string;
+  /**
+   * 文章内容
+   */
+  rawContent: string;
+  /**
+   * 副标题文章介绍
+   */
+  snippet: string;
+  /**
+   * 是否审核通过 0 未通过 1通过
+   */
+  status: number;
+  /**
+   * 文章标签
+   */
+  tags: string[];
+  /**
+   * 文章标题
+   */
   title: string;
-  wordCount: number | null;
-  imageUrl: string | null;
-  tags: (string | number)[];
-  enclosure?: {
-    url: string;
-    type: string;
-    length: number;
-  };
-  itunes?: {
-    duration?: string;
-  };
+  /**
+   * 置顶文章 0不置顶 1置顶
+   */
+  topTime: number;
+  /**
+   * 文章类型 0 全部 1 深度文章 2 专栏 3 专题 前面都是包含关系
+   */
+  type: number;
+  /**
+   * 文章字数
+   */
+  wordCount: number;
+  /**
+   * 专栏id
+   */
+  cid: string;
+  /**
+   * 专题id
+   */
+  tid: string;
+  /**
+   * 专题标题
+   */
+  tTitle: string;
+  /**
+   * 专题副标题
+   */
+  tSubTitle: string;
+  /**
+   * 文章的更新时间
+   */
+  lastUpdateTime: number;
+  /**
+   * 文章的创建时间
+   */
+  createTime: number;
+  /**
+   * 当前文章的语种
+   * 0 中文 1 英文 以此类推
+   */
+  lang: string;
+  /**
+   * 当前文章插入数据库的状态
+   * 默认0 未插入 1 插入成功 2 插入失败
+   */
+  flag: string;
+}
+/**
+ * 分享
+ */
+export interface News {
+  /**
+   * 0 未推送 1已推送
+   */
+  apppush: number;
+  /**
+   * 资讯id
+   */
+  authorid: String;
+  /**
+   * 文章作者标题
+   */
+  authorName: String;
+  /**
+   * 文章作者标题
+   */
+  authorAvatar: String;
+  /**
+   * 快讯Id
+   */
+  id: string;
+  /**
+   * 图片地址
+   */
+  imgUrl: string;
+  /**
+   * 发布时间
+   */
+  publishOn: string;
+  /**
+   * 文章简短描述
+   */
+  snippet: string;
+  /**
+   * 资讯内容
+   */
+  rawContent: string;
+  /**
+   * 0 未审核通过 1通过
+   */
+  status: number;
+  /**
+   * 标签
+   */
+  tags: string;
+  /**
+   * 标题
+   */
+  title: string;
+  /**
+   * 0 非热门 1热门
+   */
+  topTime: number;
+  /**
+   * 生成时间
+   */
+  createTime: string;
+  /**
+   * 生成时间
+   */
+  updateTime: string;
+  /**
+   * 当前文章的语种
+   * 0 中文 1 英文 以此类推
+   */
+  lang: string;
+  /**
+   * 当前文章插入数据库的状态
+   * 默认0 未插入 1 插入成功 2 插入失败
+   */
+  flag: string;
 }
 
-export interface EnrichedSource {
-  title: string | null;
-  logo: string | null;
-  feedUrl: string;
-  siteUrl: string | null;
-  articles: EnrichedArticle[];
+export interface User {
+  /**
+   * 用户id
+   */
+  uid: string;
+  /**
+   * 用户名称
+   */
+  name: string;
+  /**
+   * 用户头像
+   */
+  logoUrl: string;
+  /**
+   * 用户id
+   */
+  phone: string;
+  /**
+   * 用户名称
+   */
+  email: string;
+  /**
+   * 用户名称
+   */
+  password: string;
+  /**
+   * 用户名称
+   */
+  descp: string;
+  /**
+   * 用户名称
+   */
+  address: string;
+  /**
+   * 用户名称
+   */
+  account: string;
+  /**
+   * 用户id
+   */
+  level: string;
+  /**
+   * 用户名称
+   */
+  up: string;
 }
-
 const parser = new Parser({
   customFields: {
     item: ["media:thumbnail"],
@@ -65,37 +251,23 @@ const parser = new Parser({
 
 export interface EnrichInput {
   source: Source;
-  cache: Cache;
   config: Config;
 }
 
 /**
  * @returns null when enrich failed due to fatal errors
  */
-export async function enrich(enrichInput: EnrichInput): Promise<EnrichedSource | null> {
-  // TODO split into download, parse, report, etc. steps
+export async function enrich(enrichInput: EnrichInput): Promise<EnrichSchema | null> {
   return enrichInternal(enrichInput);
 }
 
-async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichedSource | null> {
-  const { source, cache, config } = enrichInput;
-  const cachedSource = cache.sources.find((cachedSource) => cachedSource.feedUrl === source.href);
-
-  const startTime = performance.now();
+export async function enrichArticleItem(enrichInput: EnrichInput): Promise<EnrichSchemaArticle | null> {
+  const { source } = enrichInput;
   const xmlString = await downloadTextFile(source.href).catch((err) => {
     console.error(`[enrich] Error downloading source ${source.href}`);
-    return null;
+    return "";
   });
 
-  if (!xmlString) {
-    if (cachedSource) {
-      console.log(`[enrich] Error recovery: cache used for ${source.href}`);
-      return cachedSource;
-    } else {
-      console.log(`[enrich] Error recovery: no cache available. ${source.href} is skipped.`);
-      return null;
-    }
-  }
   const rawFeed = await parser.parseString(xmlString)!.catch((err) => {
     console.error(`[enrich] Parse source failed ${source.href}`);
     throw err;
@@ -103,89 +275,126 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichedSource 
   // const rawFeed = parser.parse(xmlString);
   const feed = normalizeFeed(rawFeed, source.href);
   const items = feed.items;
-  const now = Date.now();
 
-  const cachedArticles = cache.sources.find((cachedSource) => cachedSource.feedUrl === source.href)?.articles ?? [];
-
-  const newItems = items.filter((item) => cachedArticles.every((article) => article.link !== item.link));
-  const newArticlesAsync: Promise<EnrichedArticle | null>[] = newItems.map(async (item) => {
-    const title = item.title ?? "Untitled";
+  const newArticlesAsync: Promise<Article | null>[] = items.map(async (item) => {
+    const title = item.title ?? "";
     const link = item.link;
 
     if (!link) return null;
 
-    // In general, treat feed as source of truth and enriched content as fallback
     const enrichedItem = isItemEnrichable(item) ? await enrichItem(link) : unenrichableItem;
-    const description = getSummary({ parsedItem: item, enrichedItem });
-    const publishedOn = item.isoDate ?? enrichedItem.publishedTime?.toISOString() ?? new Date().toISOString();
-    const id = generateRandomId();
-    const author = { name: source.title, logo: source.logo, id: generateRandomId(16) };
-    const imageUrl = item.imageUrl ?? enrichedItem.imageUrl ?? null;
-    // 用来区分文章类型 0首页、1深度、2快讯（暂定）
-    const type = "0";
+    const rawContent = getSummary({ parsedItem: item, enrichedItem });
+    const snippet = getSnippets({ parsedItem: item, enrichedItem });
+    const publishOn = item.isoDate ?? enrichedItem.publishedTime?.toISOString() ?? new Date().toISOString();
+    // id 让数据库来生成
+    const id = hashUniqueId(title);
+    const imgUrl = item.imageUrl ?? enrichedItem.imageUrl ?? "";
     // 是否置顶
-    const isTop = isTopPin(source.title);
-    // 热门文章
-    const hot = isHotArticle(source.title);
-    // 文章标签 快速过滤
-    const tags = getTagsByTitle(item.title);
-    const enrichedArticle: EnrichedArticle = {
+    const topTime = isTopPin(source.title);
+    const tags = getTagsByTitle(item.title as string);
+    // 是否Banner
+    const enrichedArticle: Article = {
       id,
-      author,
-      isTop,
-      hot,
-      type,
+      authorid: hashUniqueId(source.title),
+      authorName: source.title,
+      authorAvatar: source.logo,
+      topTime,
       tags,
-      description,
-      link,
-      publishedOn,
-      wordCount: enrichedItem.wordCount,
+      snippet,
+      rawContent,
+      publishOn: getCurrentTime(publishOn),
       title,
-      itunes: item.itunes,
-      enclosure: item.enclosure,
-      imageUrl,
+      imgUrl,
+      apppush: 0,
+      status: 1,
+      createTime: getCurrentTime(),
+      updateTime: getCurrentTime(),
     };
 
     return enrichedArticle;
   });
 
-  const newArticles = (await Promise.all(newArticlesAsync)).filter((article) => article !== null) as EnrichedArticle[];
-  const combinedUniqueArticles = unionWithOutComparator(newArticles, cachedArticles);
-  const renderedArticles = combinedUniqueArticles
-    .filter((item) => {
-      const elapsedDate = Math.round((now - new Date(item.publishedOn).getTime()) / MILLISECONDS_PER_DAY);
-      return elapsedDate < config.cacheMaxDays && elapsedDate >= 0;
-    })
-    .sort((a, b) => b.publishedOn.localeCompare(a.publishedOn));
-
-  const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
-
-  console.log(
-    `[enrich] ${durationInSeconds.toString().padStart(4)}s | ${cachedArticles.length
-      .toString()
-      .padStart(3)} cached | ${(renderedArticles.length - cachedArticles.length).toString().padStart(3)} new | ${
-      source.href
-    }`
-  );
+  const newArticles = (await Promise.all(newArticlesAsync)).filter((article) => article !== null) as Article[];
+  const renderedArticles = newArticles.sort((a, b) => b.publishOn.localeCompare(a.publishOn));
 
   return {
-    title: source.title ?? null,
-    logo: source.logo ?? null,
-    feedUrl: source.href,
-    siteUrl: feed.link ?? null,
+    articles: renderedArticles,
+  };
+}
+
+async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichSchema | null> {
+  const { source } = enrichInput;
+  const xmlString = await downloadTextFile(source.href).catch((err) => {
+    console.error(`[enrich] Error downloading source ${source.href}`);
+    return "";
+  });
+
+  const rawFeed = await parser.parseString(xmlString)!.catch((err) => {
+    console.error(`[enrich] Parse source failed ${source.href}`);
+    throw err;
+  });
+  // const rawFeed = parser.parse(xmlString);
+  const feed = normalizeFeed(rawFeed, source.href);
+  const items = feed.items;
+
+  const newArticlesAsync: Promise<News | null>[] = items.map(async (item) => {
+    const title = item.title ?? "";
+    const link = item.link;
+
+    if (!link) return null;
+
+    const enrichedItem = isItemEnrichable(item) ? await enrichItem(link) : unenrichableItem;
+    const rawContent = getSummary({ parsedItem: item, enrichedItem });
+    const snippet = getSnippets({ parsedItem: item, enrichedItem });
+    const publishOn = item.isoDate ?? enrichedItem.publishedTime?.toISOString() ?? new Date().toISOString();
+    // id 让数据库来生成
+    const id = hashUniqueId(title);
+    const imgUrl = item.imageUrl ?? enrichedItem.imageUrl ?? "";
+    // 是否置顶
+    const topTime = isTopPin(source.title);
+    const tags = getTagsByTitle(item.title as string);
+    // 是否Banner
+    const enrichedArticle: News = {
+      id,
+      authorid: hashUniqueId(source.title),
+      authorName: source.title,
+      authorAvatar: source.logo,
+      topTime,
+      tags,
+      snippet,
+      rawContent,
+      publishOn: getCurrentTime(publishOn),
+      title,
+      imgUrl,
+      apppush: 0,
+      status: 1,
+      createTime: getCurrentTime(),
+      updateTime: getCurrentTime(),
+    };
+
+    return enrichedArticle;
+  });
+
+  const newArticles = (await Promise.all(newArticlesAsync)).filter((article) => article !== null) as News[];
+  const renderedArticles = newArticles.sort((a, b) => b.publishOn.localeCompare(a.publishOn));
+
+  return {
     articles: renderedArticles,
   };
 }
 
 export interface EnrichItemResult {
   description: string | null;
-  wordCount: number | null;
+  wordCount: number;
   publishedTime: Date | null;
   imageUrl: string | null;
   logoUrl: string | null;
 }
 
 async function enrichItem(link: string): Promise<EnrichItemResult> {
+  // 直接走爬虫？可以有
+  // 把爬回来的内容直接放到数据库中
+  // 但是得考虑爬虫的实效性和如果代理被封了怎么办？回退方案是什么？
   try {
     const responseHtml = await downloadTextFile(link);
 
@@ -201,7 +410,7 @@ async function enrichItem(link: string): Promise<EnrichItemResult> {
     if (!description?.length) {
       description = $(`meta[name="description"]`).attr("content") ?? null;
     }
-    description = description?.length ? htmlToText(description) : null;
+    description = description?.length ? removeHtmlEmptyTags(description) : null;
 
     let publishedTime: Date | null = null;
     const publishedTimeString = $(`meta[property="article:published_time"]`).attr("content") ?? null;
@@ -234,7 +443,7 @@ async function enrichItem(link: string): Promise<EnrichItemResult> {
 
 const unenrichableItem: EnrichItemResult = {
   description: null,
-  wordCount: null,
+  wordCount: 0,
   publishedTime: null,
   imageUrl: null,
   logoUrl: null,
@@ -245,12 +454,19 @@ const unenrichableItem: EnrichItemResult = {
 function getSummary(input: GetSummaryInput): string {
   return getFirstNonNullItem(
     input.parsedItem.summary,
-    input.parsedItem.content ? input.parsedItem.content : null,
+    input.parsedItem.content ? removeHtmlEmptyTags(input.parsedItem.content) : null,
     input.enrichedItem.description,
     ""
   );
 }
-
+function getSnippets(input: GetSummaryInput): string {
+  return getFirstNonNullItem(
+    input.parsedItem.summary,
+    input.parsedItem.snippet ? input.parsedItem.snippet : null,
+    input.enrichedItem.description,
+    ""
+  );
+}
 interface GetSummaryInput {
   parsedItem: ParsedFeedItem;
   enrichedItem: EnrichItemResult;

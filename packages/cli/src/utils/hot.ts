@@ -2,7 +2,7 @@
 // v1 随机返回文章数组
 function isHotArticle(item: string) {
   let topWhitelist = ["ETH"];
-  return { isHot: topWhitelist.includes(item), hotScore: Math.floor(Math.random() * 1000000) };
+  return topWhitelist.includes(item) ? 1 : 0;
 }
 
 export { isHotArticle };

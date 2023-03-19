@@ -16,8 +16,10 @@ export const TagList = [
 ];
 
 // 根据文章的内容，自动给文章打标签
-function getTagsByTitle(title: any) {
-  return TagList.map((tag) => (title.search(tag) !== -1 ? tag : -1)).filter((tag) => tag !== -1);
+function getTagsByTitle(title: string) {
+  return TagList.map((tag) => (title.search(tag) !== -1 ? tag : ""))
+    .filter((tag) => tag !== "")
+    .join(",");
 }
 
 export { getTagsByTitle };

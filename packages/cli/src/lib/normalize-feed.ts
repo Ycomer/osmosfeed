@@ -16,6 +16,7 @@ export interface ParsedFeedItem {
   creator: string | null;
   summary: string | null;
   content: string | null;
+  snippet: string | null;
   imageUrl: string | null;
   itunes?: {
     duration: string;
@@ -33,21 +34,18 @@ export function normalizeFeed(feed: Parser.Output<CustomFields>, feedUrl: string
     title: getNonEmptyStringOrNull(feed.title),
     items: feed.items.map((item) => {
       const thumbnailImage = getNonEmptyStringOrNull(item["media:thumbnail"]);
-      const enclosureImage = item.enclosure?.type.startsWith("image/")
-        ? getNonEmptyStringOrNull(item.enclosure.url)
-        : null;
       const link = getNonEmptyStringOrNull(item.link);
-      const imageUrl = thumbnailImage ?? enclosureImage;
-
+      const imageUrl = thumbnailImage;
       return {
-        content: getNonEmptyStringOrNull(item.contentSnippet),
+        content: getNonEmptyStringOrNull(item.content),
+        snippet: getNonEmptyStringOrNull(item.contentSnippet),
         creator: getNonEmptyStringOrNull(item.creator),
         guid: getNonEmptyStringOrNull(item.guid),
         isoDate: getNonEmptyStringOrNull(item.isoDate),
         link: link ? resolveRelativeUrl(link, feedUrl) : null,
         summary: getNonEmptyStringOrNull(item.summary),
         title: getNonEmptyStringOrNull(item.title),
-        imageUrl: imageUrl ? resolveRelativeUrl(imageUrl, feedUrl) : null,
+        imageUrl,
         ...getItunesFields(item),
       };
     }),
