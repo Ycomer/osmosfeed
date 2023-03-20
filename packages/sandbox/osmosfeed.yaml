@@ -22,3 +22,8 @@ sources:
     logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
     type: null
     lang: 0
+  - title: Vitalik Buterin
+    href: "https://foresightnews.pro/column/detail/58"
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Vitalik_Buterin_TechCrunch_London_2015_%28cropped%29.jpg/500px-Vitalik_Buterin_TechCrunch_London_2015_%28cropped%29.jpg"
+    type: 2
+    lang: 0
