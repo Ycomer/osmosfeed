@@ -3,8 +3,9 @@ import { Article, News, User } from "../lib/enrich";
 import { marshall } from "@aws-sdk/util-dynamodb";
 export const ArticleItem = (item: Article) => {
   return marshall({
-    publishon: item.publishOn,
     id: item.id,
+    hashid: item.hashId,
+    publishon: item.publishOn,
     title: item.title,
     toptime: item.topTime,
     bannertime: item.bannerTime,
@@ -18,21 +19,18 @@ export const ArticleItem = (item: Article) => {
     rawcontent: item.rawContent,
     apppush: item.apppush,
     cid: item.cid,
-    tid: item.tid,
     lang: item.lang,
     flag: item.flag,
     ttitle: item.tTitle,
     tsubtitle: item.tSubTitle,
     lastudatetime: item.lastUpdateTime,
-    authorid: item.authorid,
-    authorname: item.authorName,
-    authoravatar: item.authorAvatar,
     createtime: item.createTime,
   });
 };
 
 export const CustmorItem = (item: User) => {
   return marshall({
+    id: item.id,
     uid: item.uid,
     phone: item.phone,
     name: item.name,
@@ -54,6 +52,7 @@ export const NewsItem = (item: News) => {
     authorname: item.authorName,
     authoravatar: item.authorAvatar,
     id: item.id,
+    hashid: item.hashId,
     title: item.title,
     lang: item.lang,
     flag: item.flag,

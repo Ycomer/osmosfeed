@@ -2,34 +2,35 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3
 import { Article, News } from "../lib/enrich";
 import { querySpecificTableData } from "../lib/awsDynamodb";
 import { updateFlagStatus } from "./dataBaseOperation";
-const Bucket = "sophondev";
+import { PageInfo } from "../constant";
+
 const client = new S3Client({
-  region: "ap-northeast-1",
+  region: process.env.STATIC_REGION,
 });
 
 // 上传数据到S3
-async function puDataToS3(content: any, keyname: string) {
-  // 调用方法
+export async function puDataToS3(content: any, keyname: string) {
   const stream = Buffer.from(JSON.stringify(content, undefined, 2));
   const params = {
-    Bucket: Bucket,
+    Bucket: process.env.STATIC_BUCKET,
     Key: keyname,
     Body: stream,
   };
   const command = new PutObjectCommand(params);
   try {
     const data = await client.send(command);
-    console.log(data);
+    return data;
   } catch (error) {
     console.log(error);
   } finally {
     console.log("what error");
   }
 }
+
 // 获取桶下面的指定前缀的文件
 async function getMaxOrderFromS3(name: string) {
   const params = {
-    Bucket: Bucket,
+    Bucket: process.env.STATIC_BUCKET,
     Key: `${name}_max_rder.json`,
   };
   try {
@@ -43,7 +44,7 @@ async function getMaxOrderFromS3(name: string) {
 }
 
 async function putArticleListToS3(list: Article[]) {
-  const maxOrder = (await getMaxOrderFromS3("article")) | 0;
+  const maxOrder = (await getMaxOrderFromS3("article")) | 1;
   const finalArticleList: any = [];
   for (const item of list) {
     try {
@@ -54,9 +55,6 @@ async function putArticleListToS3(list: Article[]) {
           id: item.id,
           title: item.title,
           imgUrl: item.imgUrl,
-          authorId: item.authorid,
-          authorName: item.authorName,
-          authorAvatar: item.authorAvatar,
           publishOn: item.publishOn,
           bannerTime: item.bannerTime,
           topTime: item.topTime,
@@ -66,7 +64,6 @@ async function putArticleListToS3(list: Article[]) {
           wordCount: item.wordCount,
           tags: item.tags,
           cid: item.cid,
-          tid: item.tid,
           tTitle: item.tTitle,
           tSubTitle: item.tSubTitle,
           lastUpdateTime: item.lastUpdateTime,
@@ -93,9 +90,10 @@ async function putArticleListToS3(list: Article[]) {
   await putCurrentMaxOrderToS3(finalOrder, "article");
 }
 
-export async function putNewsListToS3(list: News[], name: "string") {
+export async function putNewsListToS3(list: News[], name: string) {
   const maxOrder = (await getMaxOrderFromS3(name.toLowerCase())) | 0;
   const resultArray: any = [];
+  // 相当于已经在数据库中进行了去重操作
   for (const item of list) {
     try {
       // 查询flag字段的值
@@ -136,26 +134,31 @@ export async function putNewsListToS3(list: News[], name: "string") {
 }
 
 function sliceArray(list: any) {
-  const chunkSize = 20;
+  if (list.length === 0) return [];
   const subArrays = [];
-  for (let i = 0; i < list.length; i += chunkSize) {
-    subArrays.push(list.slice(i, i + chunkSize));
+  for (let i = 0; i < list.length; i += PageInfo.chunkSize) {
+    subArrays.push(list.slice(i, i + PageInfo.chunkSize));
   }
   return subArrays;
 }
 
 async function puDataToS3WithError(list: any, maxOrder: number, tablename: string) {
+  // 根据当前最大的order值，计算出已经上传的数据的大小， 讲剩余的数据进行分页上传即可
+  const uploadedSize = PageInfo.chunkSize * maxOrder;
   let finalNewsList = list.filter((item: any) => item !== null);
-  let finalOrder = maxOrder + 1;
-  // 分组分成小的数组 每组20个，够20个 数组名称加1
+  let finalOrder = maxOrder;
+  finalNewsList = finalNewsList.slice(uploadedSize);
   const listNews = sliceArray(finalNewsList);
-  for (const item of listNews) {
-    try {
-      await puDataToS3(item, `${tablename.toLowerCase()}_${finalOrder++}.json`);
-      await putCurrentMaxOrderToS3(finalOrder, tablename.toLowerCase());
-    } catch (error) {
-      // 失败了以后讲flag字段的值改为2
-      await updateFlagStatus(tablename, item[0].publishOn, item.id, 2);
+  // 如果返回的数据产生的页数和拿到当前最大的页面一致， 只需要把最后一页的数据填满
+  if (listNews.length > 0) {
+    for (const item of listNews) {
+      try {
+        await puDataToS3(item, `${tablename.toLowerCase()}_${finalOrder++}.json`);
+        await putCurrentMaxOrderToS3(finalOrder, tablename.toLowerCase());
+      } catch (error) {
+        // 失败了以后讲flag字段的值改为2
+        await updateFlagStatus(tablename, item[0].publishOn, item.id, 2);
+      }
     }
   }
 }

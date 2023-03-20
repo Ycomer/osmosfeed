@@ -5,7 +5,7 @@ export const ArticleParams = {
   TableName: "ARTICLE",
   KeySchema: [
     {
-      AttributeName: "publishon",
+      AttributeName: "hashid",
       KeyType: "HASH",
     },
     {
@@ -16,7 +16,7 @@ export const ArticleParams = {
   BillingMode: "PROVISIONED",
   AttributeDefinitions: [
     {
-      AttributeName: "publishon",
+      AttributeName: "hashid",
       AttributeType: "S",
     },
     {
@@ -36,7 +36,7 @@ export const NewsParams = {
   BillingMode: "PROVISIONED",
   KeySchema: [
     {
-      AttributeName: "publishon",
+      AttributeName: "hashid",
       KeyType: "HASH",
     },
     {
@@ -46,7 +46,7 @@ export const NewsParams = {
   ],
   AttributeDefinitions: [
     {
-      AttributeName: "publishon",
+      AttributeName: "hashid",
       AttributeType: "S",
     },
     {
@@ -70,7 +70,7 @@ export const UsersParams = {
       KeyType: "HASH",
     },
     {
-      AttributeName: "email",
+      AttributeName: "id",
       KeyType: "RANGE",
     },
   ],
@@ -80,7 +80,7 @@ export const UsersParams = {
       AttributeType: "S",
     },
     {
-      AttributeName: "email",
+      AttributeName: "id",
       AttributeType: "S",
     },
   ],

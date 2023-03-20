@@ -105,6 +105,7 @@ export const querySpecificTableData = async (name: string, pushlishon: string) =
   }
 };
 
+// 向文章和资讯表里插入数据（因为要对表中的字段进行更新）
 export const putDatasToDB = async (list: News[], name: string) => {
   for (const item of list) {
     try {
@@ -118,3 +119,31 @@ export const putDatasToDB = async (list: News[], name: string) => {
     }
   }
 };
+
+// 向用户表里传入数据
+export const putUserInfoToDB = async (list: any, name: string) => {
+  for (const item of list) {
+    try {
+      await putDataToSpecificTable(item, name);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+};
+
+// 自增id
+async function getAutoIncreaseIdWithDynamoDB(tableName: string, idKeyName: string) {
+  const params = {
+    TableName: tableName,
+    Key: {
+      [idKeyName]: "unique-id",
+    },
+    UpdateExpression: "ADD currentValue :increment",
+    ExpressionAttributeValues: {
+      ":increment": 1,
+    },
+    ReturnValues: "UPDATED_NEW",
+  };
+  const data = await ddbDocClient.send(new UpdateCommand(params));
+  return data.Attributes?.currentValue;
+}

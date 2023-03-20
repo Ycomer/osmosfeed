@@ -4,4 +4,7 @@ const TableName = {
   USER: "USER",
 };
 
-export { TableName };
+const PageInfo = {
+  chunkSize: 20,
+};
+export { TableName, PageInfo };

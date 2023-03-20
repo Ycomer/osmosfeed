@@ -5,35 +5,41 @@ import { getFirstNonNullItem } from "../utils/get-first-non-null-item";
 import { removeHtmlEmptyTags } from "../utils/html-to-text";
 import { hashUniqueId, getCurrentTime } from "../utils/random";
 import { isTopPin } from "../utils/top";
-import { isHotArticle } from "../utils/hot";
 import { getTagsByTitle } from "../utils/tags";
-import { isBannerPin } from "../utils/isBanner";
 import type { Config, Source } from "./get-config";
 import { normalizeFeed, ParsedFeedItem } from "./normalize-feed";
-export interface EnrichSchema {
-  articles: News[];
-}
-export interface EnrichSchemaArticle {
-  articles: Article[];
-}
+import { uploadImageAndGetPath } from "../utils/getimage";
+import { getAllColumnArticles } from "../lib/getArticleList";
+import { getIdWithType } from "../utils/random";
+
 // 这个地方是入库的字段，出库的时候不一定要全部出库，可以根据需要出库
+
+export interface ArticleSource {
+  title: string;
+  href: string;
+  type: number;
+  lang: number;
+  logo: string;
+}
+
+export interface ColumnArticle {
+  url: string;
+  title: string;
+  content: string;
+  publishon: string;
+  imgUrl: string;
+  descp: string;
+  lang: number;
+  authorName: string;
+  authorAvatar: string;
+  authorBrief: string;
+}
+
 export interface Article {
   /**
    * 是否通过app推送 0未推送 1推送
    */
   apppush: number;
-  /**
-   * 文章作者id
-   */
-  authorid: String;
-  /**
-   * 文章作者标题
-   */
-  authorName: String;
-  /**
-   * 文章作者标题
-   */
-  authorAvatar: String;
   /**
    * 是否存在顶部swiper 0 不存在 1存在
    */
@@ -43,9 +49,13 @@ export interface Article {
    */
   hotTime: number;
   /**
-   * 文章唯一id
+   * 文章id
    */
   id: string;
+  /**
+   * 文章唯一id
+   */
+  hashId: string;
   /**
    * 文章图
    */
@@ -69,7 +79,7 @@ export interface Article {
   /**
    * 文章标签
    */
-  tags: string[];
+  tags: string;
   /**
    * 文章标题
    */
@@ -87,13 +97,9 @@ export interface Article {
    */
   wordCount: number;
   /**
-   * 专栏id
+   * 专栏和专栏id 通过前面的_签名的内容区分
    */
   cid: string;
-  /**
-   * 专题id
-   */
-  tid: string;
   /**
    * 专题标题
    */
@@ -105,21 +111,21 @@ export interface Article {
   /**
    * 文章的更新时间
    */
-  lastUpdateTime: number;
+  lastUpdateTime: string;
   /**
    * 文章的创建时间
    */
-  createTime: number;
+  createTime: string;
   /**
    * 当前文章的语种
    * 0 中文 1 英文 以此类推
    */
-  lang: string;
+  lang: number;
   /**
    * 当前文章插入数据库的状态
    * 默认0 未插入 1 插入成功 2 插入失败
    */
-  flag: string;
+  flag: number;
 }
 /**
  * 分享
@@ -145,6 +151,10 @@ export interface News {
    * 快讯Id
    */
   id: string;
+  /**
+   * 唯一Id
+   */
+  hashId: string;
   /**
    * 图片地址
    */
@@ -201,6 +211,10 @@ export interface User {
   /**
    * 用户id
    */
+  id: string;
+  /**
+   * 用户唯一id
+   */
   uid: string;
   /**
    * 用户名称
@@ -242,7 +256,12 @@ export interface User {
    * 用户名称
    */
   up: string;
+  /**
+   * 类目 0 是专栏 1 专题
+   */
+  type: number;
 }
+
 const parser = new Parser({
   customFields: {
     item: ["media:thumbnail"],
@@ -254,75 +273,72 @@ export interface EnrichInput {
   config: Config;
 }
 
-/**
- * @returns null when enrich failed due to fatal errors
- */
-export async function enrich(enrichInput: EnrichInput): Promise<EnrichSchema | null> {
-  return enrichInternal(enrichInput);
-}
-
-export async function enrichArticleItem(enrichInput: EnrichInput): Promise<EnrichSchemaArticle | null> {
+export async function enrichArticle(enrichInput: EnrichInput): Promise<any> {
   const { source } = enrichInput;
-  const xmlString = await downloadTextFile(source.href).catch((err) => {
-    console.error(`[enrich] Error downloading source ${source.href}`);
-    return "";
-  });
+  const articleLists = await getAllColumnArticles(source);
 
-  const rawFeed = await parser.parseString(xmlString)!.catch((err) => {
-    console.error(`[enrich] Parse source failed ${source.href}`);
-    throw err;
-  });
-  // const rawFeed = parser.parse(xmlString);
-  const feed = normalizeFeed(rawFeed, source.href);
-  const items = feed.items;
-
-  const newArticlesAsync: Promise<Article | null>[] = items.map(async (item) => {
-    const title = item.title ?? "";
-    const link = item.link;
-
-    if (!link) return null;
-
-    const enrichedItem = isItemEnrichable(item) ? await enrichItem(link) : unenrichableItem;
-    const rawContent = getSummary({ parsedItem: item, enrichedItem });
-    const snippet = getSnippets({ parsedItem: item, enrichedItem });
-    const publishOn = item.isoDate ?? enrichedItem.publishedTime?.toISOString() ?? new Date().toISOString();
-    // id 让数据库来生成
+  const newArticlesAsync = articleLists.map(async (item) => {
+    const title = item.title;
+    const rawContent = item.content;
+    const snippet = item.descp;
+    const publishOn = item.publishon;
     const id = hashUniqueId(title);
-    const imgUrl = item.imageUrl ?? enrichedItem.imageUrl ?? "";
+    const imgUrl = item.imgUrl;
     // 是否置顶
     const topTime = isTopPin(source.title);
     const tags = getTagsByTitle(item.title as string);
+    // 2 专栏
+    const uid = getIdWithType(source.type).customId;
     // 是否Banner
     const enrichedArticle: Article = {
       id,
-      authorid: hashUniqueId(source.title),
-      authorName: source.title,
-      authorAvatar: source.logo,
-      topTime,
-      tags,
-      snippet,
-      rawContent,
+      hashId: id,
       publishOn: getCurrentTime(publishOn),
       title,
-      imgUrl,
-      apppush: 0,
+      topTime,
+      bannerTime: 0,
+      hotTime: 0,
+      type: 0,
+      wordCount: 0,
       status: 1,
+      tags,
+      imgUrl,
+      snippet,
+      rawContent,
+      apppush: 0,
+      cid: uid,
+      lang: item.lang,
+      flag: 0,
+      tTitle: "",
+      tSubTitle: "",
+      lastUpdateTime: getCurrentTime(),
       createTime: getCurrentTime(),
-      updateTime: getCurrentTime(),
     };
 
-    return enrichedArticle;
+    const enrichUser: User = {
+      id: uid, // 需要自增id
+      uid: uid,
+      type: getIdWithType(source.type).typeId,
+      name: item.authorName,
+      logoUrl: item.authorAvatar,
+      phone: "",
+      email: "",
+      password: "",
+      descp: item.authorBrief,
+      address: "",
+      account: "",
+      level: "",
+      up: "",
+    };
+
+    return { enrichedArticle, enrichUser };
   });
 
-  const newArticles = (await Promise.all(newArticlesAsync)).filter((article) => article !== null) as Article[];
-  const renderedArticles = newArticles.sort((a, b) => b.publishOn.localeCompare(a.publishOn));
-
-  return {
-    articles: renderedArticles,
-  };
+  const newArticles = await Promise.all(newArticlesAsync);
+  return newArticles;
 }
 
-async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichSchema | null> {
+export async function enrichNews(enrichInput: EnrichInput): Promise<News[] | null> {
   const { source } = enrichInput;
   const xmlString = await downloadTextFile(source.href).catch((err) => {
     console.error(`[enrich] Error downloading source ${source.href}`);
@@ -349,12 +365,13 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichSchema | 
     const publishOn = item.isoDate ?? enrichedItem.publishedTime?.toISOString() ?? new Date().toISOString();
     // id 让数据库来生成
     const id = hashUniqueId(title);
-    const imgUrl = item.imageUrl ?? enrichedItem.imageUrl ?? "";
+    const imgUrl = await uploadImageAndGetPath(item.imageUrl ?? enrichedItem.imageUrl ?? "");
     // 是否置顶
     const topTime = isTopPin(source.title);
     const tags = getTagsByTitle(item.title as string);
     // 是否Banner
     const enrichedArticle: News = {
+      hashId: id,
       id,
       authorid: hashUniqueId(source.title),
       authorName: source.title,
@@ -380,9 +397,7 @@ async function enrichInternal(enrichInput: EnrichInput): Promise<EnrichSchema | 
   const newArticles = (await Promise.all(newArticlesAsync)).filter((article) => article !== null) as News[];
   const renderedArticles = newArticles.sort((a, b) => b.publishOn.localeCompare(a.publishOn));
 
-  return {
-    articles: renderedArticles,
-  };
+  return renderedArticles;
 }
 
 export interface EnrichItemResult {
