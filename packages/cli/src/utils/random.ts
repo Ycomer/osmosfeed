@@ -43,7 +43,7 @@ function getIdWithType(type: number) {
 }
 
 function randomWithImageName() {
-  return `${dayjs().format("YYYYMMDDHHmmss")}_${generateRandomId(4)}}`;
+  return `${dayjs().format("YYYYMMDDHHmmss")}${generateRandomId(4)}`;
 }
 
 function getUUID() {

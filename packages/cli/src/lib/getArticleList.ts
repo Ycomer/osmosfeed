@@ -5,7 +5,13 @@ import { uploadImageAndGetPath, uploadImageAndGetPathFromList } from "../utils/g
 import { Article, ArticleSource, ColumnArticle } from "../types";
 import { getOriginFromUrl } from "../utils/url";
 import { enrichSingleArticle } from "../lib/enrich";
-import { putDataToUserDB, putDatasToDB, queryArticlePublish } from "../lib/awsDynamodb";
+import {
+  putDataToUserDB,
+  putDatasToDB,
+  queryArticlePublish,
+  queryUserIdStatus,
+  queryUsersNewArticle,
+} from "../lib/awsDynamodb";
 
 // 解析列表页文章信息
 // todo
@@ -17,12 +23,13 @@ const parseArticle = async (element: any, colum: ArticleSource) => {
   article.publishon = element.find(".topic-time").text();
   // 讲图片也上传
   const imgUrl = element.find(".topic-content-right img").attr("src") as string;
-  console.log(imgUrl, "asdasdasdas");
+  const avatarUrl = element.find(".topic-avatar img").attr("src") as string;
+  console.log(imgUrl, "当前图片地址");
   article.imgUrl = await uploadImageAndGetPath(imgUrl);
   article.url = element.find(".topic-body a").attr("href");
   article.lang = colum.lang;
   article.authorName = element.find(".topic-author").text();
-  article.authorAvatar = await uploadImageAndGetPath(colum.logo);
+  article.authorAvatar = await uploadImageAndGetPath(avatarUrl);
   return article;
 };
 
@@ -75,15 +82,24 @@ const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
           try {
             const richArtcle = await enrichSingleArticle(article, colum);
             console.log(richArtcle, "richArtcle");
-            const currentArticlePusblishon = (await queryArticlePublish(
+            // 查询作者是否已经写入
+            const { Count: userCount, Items: userItems } = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
+
+            // 查询当前用户最新的文章
+            const { Count: articleCount, Items } = await queryUsersNewArticle(
               "ARTICLE",
-              richArtcle.enrichedArticle.hashId
-            )) as number;
-            if (+richArtcle.enrichedArticle.publishOn < currentArticlePusblishon) {
+              richArtcle.enrichedArticle.cid
+            );
+            if (
+              articleCount > 0 &&
+              Number(richArtcle.enrichedArticle.publishOn) > Number(Items && Items[0].publishon.S)
+            ) {
               endFlag = true;
               break;
             } else {
               await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+            }
+            if (userCount === 0) {
               await putDataToUserDB(richArtcle.enrichUser, "USER");
             }
             finalAtcile.push(richArtcle.enrichedArticle);
@@ -107,12 +123,12 @@ const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
     await browser.close();
     return finalAtcile;
   } catch (error) {
-    console.log(error, "errprrrrrr");
     throw new Error("Failed to get article list");
   }
 };
 
 const getAllColumnArticles = async (colum: ArticleSource) => {
+  if (colum.type !== 2) return [];
   const articlelist = await getArticleList(colum);
   return articlelist;
 };

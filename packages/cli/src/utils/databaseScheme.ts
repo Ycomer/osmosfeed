@@ -23,6 +23,27 @@ export const ArticleParams = {
       AttributeName: "id",
       AttributeType: "S",
     },
+    {
+      AttributeName: "cid",
+      AttributeType: "S",
+    },
+  ],
+
+  GlobalSecondaryIndexes: [
+    {
+      IndexName: "cid-index",
+      KeySchema: [
+        { AttributeName: "cid", KeyType: "HASH" },
+        { AttributeName: "id", KeyType: "RANGE" },
+      ],
+      Projection: {
+        ProjectionType: "ALL",
+      },
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5,
+      },
+    },
   ],
   ProvisionedThroughput: {
     ReadCapacityUnits: 5,

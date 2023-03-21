@@ -11,7 +11,7 @@ const uploadImageAndGetPath = async (imgUrl: string): Promise<string> => {
       const imageKeyName = `${imageName}.png`;
       return uploadImageDataToS3(imgUrl, imageKeyName);
     } else {
-      const imgPath = `static/${imageName}${getUrlName(imgUrl)}`;
+      const imgPath = `static/${imageName}.png`;
       const { data } = await axios.get(imgUrl, { responseType: "arraybuffer" });
       await puDataToS3(data, imgPath);
       return imgPath;
@@ -33,13 +33,6 @@ const uploadImageDataToS3 = async (data: ArrayBuffer | string, keyName: string):
     console.log(error, "上传图片失败");
     throw error;
   }
-};
-
-// 获取图片名称
-const getUrlName = (url: string) => {
-  const reg = /\.([A-Za-z]+)$/;
-  const match = url.match(reg);
-  return match ? match[1].toLowerCase() : null;
 };
 
 // 图片压缩

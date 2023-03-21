@@ -23,7 +23,7 @@ export async function puDataToS3(content: any, keyname: string) {
   } catch (error) {
     console.log(error);
   } finally {
-    console.log("what error");
+    console.log("上传到S3成功");
   }
 }
 
@@ -43,16 +43,15 @@ async function getMaxOrderFromS3(name: string) {
   }
 }
 
-async function putArticleListToS3(list: Article[]) {
-  const maxOrder = (await getMaxOrderFromS3("article")) | 1;
+async function putArticleListToS3(list: Article[], tableName: string) {
+  const maxOrder = (await getMaxOrderFromS3(tableName.toLowerCase())) | 1;
   const resultArray: any = [];
   for (const item of list) {
     try {
       // 查询flag字段的值
-      const currentFlag = await querySpecificTableData("ARTICLE", item.publishOn);
+      const currentFlag = await querySpecificTableData(tableName, item.hashId);
       if (currentFlag === 1) {
         const newPropertysList = {
-          id: item.id,
           title: item.title,
           imgUrl: item.imgUrl,
           publishOn: item.publishOn,
@@ -74,7 +73,7 @@ async function putArticleListToS3(list: Article[]) {
           content: item.rawContent,
         };
         // 文章详情
-        await puDataToS3(newPropertysDetial, `article_${item.id}.json')`);
+        await puDataToS3(newPropertysDetial, `${tableName.toLowerCase()}_${item.aid}.json`);
         // 文章当前最大自增json
         resultArray.push(newPropertysDetial);
       } else {
@@ -87,7 +86,7 @@ async function putArticleListToS3(list: Article[]) {
     }
   }
   // 文章列表
-  await puDataToS3WithError(resultArray, maxOrder, "article");
+  await puDataToS3WithError(resultArray, maxOrder, tableName);
 }
 
 function sliceArray(list: any) {
@@ -111,7 +110,7 @@ async function puDataToS3WithError(list: any, maxOrder: number, tablename: strin
     for (const item of listNews) {
       try {
         await puDataToS3(item, `${tablename.toLowerCase()}_${finalOrder++}.json`);
-        await putCurrentMaxOrderToS3(finalOrder, tablename.toLowerCase());
+        await putCurrentMaxOrderToS3(finalOrder, tablename);
       } catch (error) {
         // 失败了以后讲flag字段的值改为2
         await updateFlagStatus(tablename, item[0].publishOn, item.id, 2);
@@ -124,7 +123,7 @@ async function putCurrentMaxOrderToS3(maxOrder: number, tablename: string) {
   const Order = {
     name: maxOrder,
   };
-  puDataToS3(Order, `${tablename}_max_rder.json`);
+  puDataToS3(Order, `${tablename.toLowerCase()}_max_rder.json`);
 }
 
 export { putArticleListToS3 };

@@ -9,6 +9,8 @@ import {
   updateFlagStatus,
   queryAutoInCreIdValue,
   queryPublishOnStatus,
+  queryUserId,
+  queryCurrentUserNewArticle,
 } from "../utils/dataBaseOperation";
 import { Article } from "../types";
 
@@ -113,7 +115,7 @@ export const querySpecificTableData = async (name: string, id: string) => {
     throw error;
   }
 };
-
+// 查询文章的发布时间
 export const queryArticlePublish = async (name: string, hash: string) => {
   const params = queryPublishOnStatus(name, hash);
   try {
@@ -124,6 +126,30 @@ export const queryArticlePublish = async (name: string, hash: string) => {
     throw error;
   }
 };
+// 查询用户的id
+export const queryUserIdStatus = async (name: string, uid: string) => {
+  const params = queryUserId(name, uid);
+  try {
+    const data = await ddbClient.send(new QueryCommand(params));
+    return data;
+  } catch (error) {
+    console.error(error, "查询用户出错了");
+    throw error;
+  }
+};
+// 查询某个用户最新的文章
+
+export const queryUsersNewArticle = async (name: string, cid: string) => {
+  const params = queryCurrentUserNewArticle(name, cid);
+  try {
+    const data = await ddbClient.send(new QueryCommand(params));
+    return data;
+  } catch (error) {
+    console.error(error, "查询用户出错了");
+    throw error;
+  }
+};
+
 // 向文章表里插入数据并更新flag字段
 export const putDatasToDB = async (item: any, tableName: string) => {
   const success = await insertDataAndUpdateFlag(item, tableName);
