@@ -1,19 +1,21 @@
-export const queryFlagStatus = (name: string, publishon: string) => {
+// 查询flag的状态
+export const queryFlagStatus = (name: string, hashid: string) => {
   return {
     TableName: name,
-    KeyConditionExpression: "publishon = :publishon",
+    KeyConditionExpression: "hash = :hash",
     ExpressionAttributeValues: {
-      ":publishon": { S: publishon },
+      ":hash": { S: hashid },
     },
     ProjectionExpression: "flag",
   };
 };
 
-export const updateFlagStatus = (name: string, publishon: string, id: string, value: number) => {
+// 更新flag的状态
+export const updateFlagStatus = (name: string, hashid: string, id: string, value: number) => {
   return {
     TableName: name,
     Key: {
-      publishon: publishon,
+      hashid: hashid,
       id: id,
     },
     ProjectionExpression: "#flag",
@@ -24,5 +26,18 @@ export const updateFlagStatus = (name: string, publishon: string, id: string, va
     ExpressionAttributeValues: {
       ":f": value,
     },
+  };
+};
+// 查询id的值
+export const queryAutoInCreIdValue = (name: string, id: string) => {
+  return {
+    TableName: name,
+    KeyConditionExpression: "id = :id",
+    Limit: 1,
+    ScanIndexForward: false,
+    ExpressionAttributeValues: {
+      ":id": { S: id },
+    },
+    ProjectionExpression: "id",
   };
 };

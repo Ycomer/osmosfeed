@@ -1,5 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { Article, News } from "../lib/enrich";
+import { Article, News } from "../types";
 import { querySpecificTableData } from "../lib/awsDynamodb";
 import { updateFlagStatus } from "./dataBaseOperation";
 import { PageInfo } from "../constant";

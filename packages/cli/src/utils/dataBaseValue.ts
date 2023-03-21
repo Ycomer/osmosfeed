@@ -1,5 +1,5 @@
 // 拼装 dynamodb Item 的数据，以方便将洗好的数据写入
-import { Article, News, User } from "../lib/enrich";
+import { Article, User } from "../types";
 import { marshall } from "@aws-sdk/util-dynamodb";
 export const ArticleItem = (item: Article) => {
   return marshall({
@@ -42,28 +42,5 @@ export const CustmorItem = (item: User) => {
     account: item.account,
     level: item.level,
     up: item.up,
-  });
-};
-
-export const NewsItem = (item: News) => {
-  return marshall({
-    apppush: item.apppush,
-    authorid: item.authorid,
-    authorname: item.authorName,
-    authoravatar: item.authorAvatar,
-    id: item.id,
-    hashid: item.hashId,
-    title: item.title,
-    lang: item.lang,
-    flag: item.flag,
-    publishon: item.publishOn,
-    createtime: item.createTime,
-    updatetime: item.updateTime,
-    toptime: item.topTime,
-    status: item.status,
-    tags: item.tags,
-    imgurl: item.imgUrl,
-    snippet: item.snippet,
-    rawcontent: item.rawContent,
   });
 };

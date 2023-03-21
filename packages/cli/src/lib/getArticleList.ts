@@ -2,7 +2,7 @@ import axios from "axios";
 import * as Cheerio from "cheerio";
 import puppeteer from "puppeteer";
 import { uploadImageAndGetPath, uploadImageAndGetPathFromList } from "../utils/getimage";
-import { ArticleSource, ColumnArticle } from "./enrich";
+import { ArticleSource, ColumnArticle } from "../types";
 import { getOriginFromUrl } from "../utils/url";
 
 // 解析列表页文章信息

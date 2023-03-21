@@ -1,14 +1,13 @@
 import { ddbClient, ddbDocClient } from "./ddbClient";
 import { CreateTableCommand, ListTablesCommand, PutItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { ArticleParams, NewsParams, UsersParams } from "../utils/databaseScheme";
-import { ArticleItem, NewsItem, CustmorItem } from "../utils/dataBaseValue";
-import { queryFlagStatus, updateFlagStatus } from "../utils/dataBaseOperation";
-import { News } from "./enrich";
+import { ArticleParams, UsersParams } from "../utils/databaseScheme";
+import { ArticleItem, CustmorItem } from "../utils/dataBaseValue";
+import { queryFlagStatus, updateFlagStatus, queryAutoInCreIdValue } from "../utils/dataBaseOperation";
+import { Article } from "../types";
 
 export const TableList = [
   { name: "ARTICLE", param: ArticleParams, item: (value: any) => ArticleItem(value) },
-  { name: "NEWS", param: NewsParams, item: (value: any) => NewsItem(value) },
   { name: "USER", param: UsersParams, item: (value: any) => CustmorItem(value) },
 ];
 
@@ -60,20 +59,22 @@ export const putDataToDataBase = async (params: any) => {
  */
 export const putDataToSpecificTable = async (value: any, tableName: string) => {
   const table = TableList.find((item) => item.name === tableName);
-  if (table) {
-    try {
-      // 插入数据到具体的数据库中
-      await putDataToDataBase({
-        TableName: tableName,
-        Item: table.item(value),
-      });
-      console.log("数据插入成功");
-    } catch (error) {
-      console.log(error, "write error");
-      // 处理插入失败的情况
-    }
-  } else {
-    console.error(`Table ${tableName} not found in TableList.`);
+  if (!table) {
+    throw new Error(`Table ${tableName} not found in TableList.`);
+  }
+  // 自增id
+  // const nextId = await getAutoIncreaseId(tableName, value.id);
+
+  try {
+    // 插入数据到具体的数据库中
+    await putDataToDataBase({
+      TableName: tableName,
+      Item: table.item(value),
+    });
+    console.log("数据插入成功");
+  } catch (error) {
+    console.error(`Error inserting data into table ${tableName}`, error);
+    throw error;
   }
 };
 
@@ -86,8 +87,9 @@ export const updateTableSpecificData = async (name: string, pushlishon: string, 
     const data = await ddbDocClient.send(new UpdateCommand(params));
     console.log("Success - item added or updated", data);
     return data;
-  } catch (err) {
-    console.log("Error", err);
+  } catch (error) {
+    console.log("Error", error);
+    throw error;
   }
 };
 
@@ -100,28 +102,43 @@ export const querySpecificTableData = async (name: string, pushlishon: string) =
   try {
     const data = await ddbClient.send(new QueryCommand(params));
     return data.Count;
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
 };
 
 // 向文章和资讯表里插入数据（因为要对表中的字段进行更新）
-export const putDatasToDB = async (list: News[], name: string) => {
+export const putDatasToDB = async (list: Article[], tableName: string) => {
   for (const item of list) {
-    try {
-      await putDataToSpecificTable(item, name);
-      // 如果插入成功，将表中的flag字段更新为1
-      await updateTableSpecificData(name, item.publishOn, item.id, 1);
-    } catch (error) {
-      console.log(error);
-      // 失败后将A中的flag字段更新为2
-      await updateTableSpecificData(name, item.publishOn, item.id, 2);
+    const success = await insertDataAndUpdateFlag(item, tableName);
+    if (!success) {
+      console.log(`Failed to insert data into ${tableName}:`, item);
     }
   }
 };
 
+/**
+ * 向表中插入数据，并根据插入结果更新表中的 flag 字段
+ * @param item 要插入的数据
+ * @param tableName 要插入的表名
+ * @returns 是否成功插入数据
+ */
+
+const insertDataAndUpdateFlag = async (item: Article, tableName: string) => {
+  try {
+    await putDataToSpecificTable(item, tableName);
+    await updateTableSpecificData(tableName, item.hashId, item.id, 1);
+    return true;
+  } catch (error) {
+    console.error(`Failed to insert data into ${tableName}:`, error);
+    await updateTableSpecificData(tableName, item.hashId, item.id, 2);
+    return false;
+  }
+};
+
 // 向用户表里传入数据
-export const putUserInfoToDB = async (list: any, name: string) => {
+export const putDataToDB = async (list: any, name: string) => {
   for (const item of list) {
     try {
       await putDataToSpecificTable(item, name);
@@ -132,18 +149,13 @@ export const putUserInfoToDB = async (list: any, name: string) => {
 };
 
 // 自增id
-async function getAutoIncreaseIdWithDynamoDB(tableName: string, idKeyName: string) {
-  const params = {
-    TableName: tableName,
-    Key: {
-      [idKeyName]: "unique-id",
-    },
-    UpdateExpression: "ADD currentValue :increment",
-    ExpressionAttributeValues: {
-      ":increment": 1,
-    },
-    ReturnValues: "UPDATED_NEW",
-  };
-  const data = await ddbDocClient.send(new UpdateCommand(params));
-  return data.Attributes?.currentValue;
-}
+// async function getAutoIncreaseId(tableName: string, idName: string) {
+//   const params = queryAutoInCreIdValue(tableName, idName);
+//   try {
+//     const data = await ddbDocClient.send(new QueryCommand(params));
+//     return data.Count;
+//   } catch (error) {
+//     console.error(error);
+//     throw error;
+//   }
+// }

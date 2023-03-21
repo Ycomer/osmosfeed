@@ -1,4 +1,4 @@
-import { Article } from "../lib/enrich";
+import { Article } from "../types";
 export function getHostnameFromUrl(url?: string | null): string | null {
   if (!url) return null;
   try {
@@ -9,6 +9,7 @@ export function getHostnameFromUrl(url?: string | null): string | null {
     return null;
   }
 }
+
 export function getOriginFromUrl(url?: string | null): string | null {
   if (!url) return null;
   try {
@@ -26,9 +27,4 @@ export function resolveRelativeUrl(targetUrl: string, baseUrl: string): string |
   } catch {
     return null;
   }
-}
-
-export function unionWithOutComparator<T>(array: Article[], other: Article[]): Article[] {
-  const uniqueSet = new Set(other.map((item) => item.link));
-  return [...other, ...array.filter((item) => !uniqueSet.has(item.link))];
 }

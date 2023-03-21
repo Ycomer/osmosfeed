@@ -1,18 +1,7 @@
 import yaml from "js-yaml";
 import type { ParsableFile } from "./discover-files";
 import { normalizeUrl } from "./normalize-url";
-
-export interface Source {
-  href: string;
-  title: string;
-  logo: string;
-  type: number;
-  lang: number;
-}
-
-export interface Config {
-  sources: Source[];
-}
+import { Config } from "../types";
 
 export async function getConfig(configFile: ParsableFile | null): Promise<Config> {
   const userConfig = configFile ? parseUserConfig(configFile.rawText) : {};

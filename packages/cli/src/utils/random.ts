@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import { Md5 } from "ts-md5";
 import dayjs from "dayjs";
 import { v4 as uuidv4 } from "uuid";
@@ -11,6 +11,11 @@ function generateRandomId(length: number = 8) {
     .slice(0, length);
 }
 
+// 根据种子生成8位唯一位id
+function seedHashId(title: string) {
+  return createHash("sha256").update(title).digest("hex").slice(0, 8);
+}
+
 function hashUniqueId(title: string) {
   return Md5.hashStr(title);
 }
@@ -20,7 +25,8 @@ function getCurrentTime(time?: string) {
 }
 
 function getIdWithType(type: number) {
-  // 默认是专栏
+  // c专栏 t专题 n资讯
+  // 2专栏 3专题 0资讯
   let prefix = {
     typeId: 0,
     customId: "c",
@@ -30,6 +36,8 @@ function getIdWithType(type: number) {
   } else if (type === 3) {
     prefix.customId = `t${uuidv4()}`;
     prefix.typeId = 1;
+  } else if (type === 0) {
+    prefix.customId = `n_${uuidv4()}`;
   }
   return prefix;
 }
@@ -38,4 +46,8 @@ function randomWithImageName() {
   return `${dayjs().format("YYYYMMDDHHmmss")}_${generateRandomId(4)}}`;
 }
 
-export { generateRandomId, hashUniqueId, getCurrentTime, getIdWithType, randomWithImageName };
+function getUUID() {
+  return uuidv4();
+}
+
+export { generateRandomId, hashUniqueId, getCurrentTime, getIdWithType, randomWithImageName, getUUID, seedHashId };
