@@ -10,17 +10,17 @@ sources:
   - title: TokenInsight
     href: https://tokeninsight.com/rss/zh
     logo: https://s2.tokeninsight.com/frontend/images/favicon.png
-    type: null
+    type: 0
     lang: 0
   - title: Coingape
     href: https://coingape.com/feed/
     logo: https://cdn.coingape.com/wp-content/uploads/2021/08/25124149/logo.png
-    type: null
+    type: 0
     lang: 1
   - title: PANews
     href: https://rss.panewslab.com/zh/tvsq/rss
     logo: https://image.panewslab.com/upload/image/20210202/S12ce6bd0b5c8479a8e53551c85d68ad7.jpg
-    type: null
+    type: 0
     lang: 0
   - title: Vitalik Buterin
     href: "https://foresightnews.pro/column/detail/58"
