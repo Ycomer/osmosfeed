@@ -1,12 +1,23 @@
 // 查询flag的状态
-export const queryFlagStatus = (name: string, hashid: string) => {
+export const queryFlagStatus = (name: string, id: string) => {
   return {
     TableName: name,
-    KeyConditionExpression: "hash = :hash",
+    KeyConditionExpression: "hashid = :hashid",
     ExpressionAttributeValues: {
-      ":hash": { S: hashid },
+      ":hashid": { S: id },
     },
     ProjectionExpression: "flag",
+  };
+};
+
+export const queryPublishOnStatus = (name: string, hashid: string) => {
+  return {
+    TableName: name,
+    KeyConditionExpression: "hashid = :hashid",
+    ExpressionAttributeValues: {
+      ":hashid": { S: hashid },
+    },
+    ProjectionExpression: "publishon",
   };
 };
 

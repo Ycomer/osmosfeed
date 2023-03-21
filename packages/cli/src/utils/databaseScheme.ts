@@ -5,22 +5,22 @@ export const ArticleParams = {
   TableName: "ARTICLE",
   KeySchema: [
     {
-      AttributeName: "id",
+      AttributeName: "hashid",
       KeyType: "HASH",
     },
     {
-      AttributeName: "hashid",
+      AttributeName: "id",
       KeyType: "RANGE",
     },
   ],
   BillingMode: "PROVISIONED",
   AttributeDefinitions: [
     {
-      AttributeName: "id",
+      AttributeName: "hashid",
       AttributeType: "S",
     },
     {
-      AttributeName: "hashid",
+      AttributeName: "id",
       AttributeType: "S",
     },
   ],
@@ -36,21 +36,21 @@ export const UsersParams = {
   BillingMode: "PROVISIONED",
   KeySchema: [
     {
-      AttributeName: "id",
+      AttributeName: "uid",
       KeyType: "HASH",
     },
     {
-      AttributeName: "email",
+      AttributeName: "id",
       KeyType: "RANGE",
     },
   ],
   AttributeDefinitions: [
     {
-      AttributeName: "id",
+      AttributeName: "uid",
       AttributeType: "S",
     },
     {
-      AttributeName: "email",
+      AttributeName: "id",
       AttributeType: "S",
     },
   ],

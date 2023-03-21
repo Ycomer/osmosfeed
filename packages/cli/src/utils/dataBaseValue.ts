@@ -4,6 +4,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 export const ArticleItem = (item: Article) => {
   return marshall({
     id: item.id,
+    aid: item.aid,
     hashid: item.hashId,
     publishon: item.publishOn,
     title: item.title,
@@ -33,9 +34,10 @@ export const CustmorItem = (item: User) => {
     id: item.id,
     uid: item.uid,
     phone: item.phone,
+    type: item.type,
     name: item.name,
     address: item.address,
-    email: item.email, // 这个id对应的是文章中的cid  cid为空，就没有专栏,
+    email: item.email,
     dsecp: item.descp,
     password: item.password,
     logourl: item.logoUrl,

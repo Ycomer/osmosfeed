@@ -3,7 +3,13 @@ import { CreateTableCommand, ListTablesCommand, PutItemCommand, QueryCommand } f
 import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { ArticleParams, UsersParams } from "../utils/databaseScheme";
 import { ArticleItem, CustmorItem } from "../utils/dataBaseValue";
-import { queryFlagStatus, updateFlagStatus, queryAutoInCreIdValue } from "../utils/dataBaseOperation";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
+import {
+  queryFlagStatus,
+  updateFlagStatus,
+  queryAutoInCreIdValue,
+  queryPublishOnStatus,
+} from "../utils/dataBaseOperation";
 import { Article } from "../types";
 
 export const TableList = [
@@ -15,7 +21,7 @@ export const checkTableExist = async () => {
   try {
     const data = await ddbClient.send(new ListTablesCommand({}));
     console.log("Table Listed", data.TableNames);
-    handleCheckTableExist(data.TableNames);
+    await handleCheckTableExist(data.TableNames);
     return data;
   } catch (err) {
     console.log("Error", err);
@@ -32,15 +38,15 @@ export const createTable = async (params: any) => {
   }
 };
 
-function handleCheckTableExist(table: any) {
-  TableList.forEach((item) => {
+export async function handleCheckTableExist(table: any) {
+  for (const item of TableList) {
     if (table?.includes(item.name)) {
       console.log("Table Existed", item.name);
     } else {
       console.log("Table Not Existed", item.name);
-      createTable(item.param);
+      await createTable(item.param);
     }
-  });
+  }
 }
 
 export const putDataToDataBase = async (params: any) => {
@@ -81,8 +87,8 @@ export const putDataToSpecificTable = async (value: any, tableName: string) => {
 /**
  * @param params {Object} the value to be update into the database
  */
-export const updateTableSpecificData = async (name: string, pushlishon: string, id: string, value: number) => {
-  const params = updateFlagStatus(name, pushlishon, id, value);
+export const updateTableSpecificData = async (name: string, hashid: string, id: string, value: number) => {
+  const params = updateFlagStatus(name, hashid, id, value);
   try {
     const data = await ddbDocClient.send(new UpdateCommand(params));
     console.log("Success - item added or updated", data);
@@ -97,8 +103,8 @@ export const updateTableSpecificData = async (name: string, pushlishon: string, 
  * @param name {String} name of the table
  * @param params {Object} the value to be update into the database
  */
-export const querySpecificTableData = async (name: string, pushlishon: string) => {
-  const params = queryFlagStatus(name, pushlishon);
+export const querySpecificTableData = async (name: string, id: string) => {
+  const params = queryFlagStatus(name, id);
   try {
     const data = await ddbClient.send(new QueryCommand(params));
     return data.Count;
@@ -108,13 +114,21 @@ export const querySpecificTableData = async (name: string, pushlishon: string) =
   }
 };
 
-// 向文章和资讯表里插入数据（因为要对表中的字段进行更新）
-export const putDatasToDB = async (list: Article[], tableName: string) => {
-  for (const item of list) {
-    const success = await insertDataAndUpdateFlag(item, tableName);
-    if (!success) {
-      console.log(`Failed to insert data into ${tableName}:`, item);
-    }
+export const queryArticlePublish = async (name: string, hash: string) => {
+  const params = queryPublishOnStatus(name, hash);
+  try {
+    const data = await ddbClient.send(new QueryCommand(params));
+    return data;
+  } catch (error) {
+    console.error(error, "查询出错了");
+    throw error;
+  }
+};
+// 向文章表里插入数据并更新flag字段
+export const putDatasToDB = async (item: any, tableName: string) => {
+  const success = await insertDataAndUpdateFlag(item, tableName);
+  if (!success) {
+    console.log(`Failed to insert data into ${tableName}:`, item);
   }
 };
 
@@ -138,13 +152,11 @@ const insertDataAndUpdateFlag = async (item: Article, tableName: string) => {
 };
 
 // 向用户表里传入数据
-export const putDataToDB = async (list: any, name: string) => {
-  for (const item of list) {
-    try {
-      await putDataToSpecificTable(item, name);
-    } catch (error) {
-      console.log(error);
-    }
+export const putDataToUserDB = async (item: any, name: string) => {
+  try {
+    await putDataToSpecificTable(item, name);
+  } catch (error) {
+    console.log(error);
   }
 };
 

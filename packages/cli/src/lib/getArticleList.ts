@@ -2,13 +2,13 @@ import axios from "axios";
 import * as Cheerio from "cheerio";
 import puppeteer from "puppeteer";
 import { uploadImageAndGetPath, uploadImageAndGetPathFromList } from "../utils/getimage";
-import { ArticleSource, ColumnArticle } from "../types";
+import { Article, ArticleSource, ColumnArticle } from "../types";
 import { getOriginFromUrl } from "../utils/url";
+import { enrichSingleArticle } from "../lib/enrich";
+import { putDataToUserDB, putDatasToDB, queryArticlePublish } from "../lib/awsDynamodb";
 
 // 解析列表页文章信息
 // todo
-// 爬之 先跟数据库对比 如果当前文章的时间小于数据库中的时间 则不再爬取
-// 每爬一条数往进插入一条数据， 需要比对 然后再查一下最新的， 如果最新的时间小于当前的时间 则不再爬取
 
 const parseArticle = async (element: any, colum: ArticleSource) => {
   const article: any = {};
@@ -45,13 +45,15 @@ const parseDetail = async (url: any) => {
 };
 
 // 获取文章列表数据
-const getArticleList = async (colum: ArticleSource): Promise<ColumnArticle[]> => {
+const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
   try {
     const site = colum.href;
+    const origin = getOriginFromUrl(colum.href);
     const browser = await puppeteer.launch();
     const pageInstance = await browser.newPage();
     await pageInstance.goto(site);
     let articles: ColumnArticle[] = [];
+    let finalAtcile: Article[] = [];
     let endFlag = false;
     while (!endFlag) {
       const response = await axios.get(pageInstance.url());
@@ -64,8 +66,31 @@ const getArticleList = async (colum: ArticleSource): Promise<ColumnArticle[]> =>
         const article = await parseArticle(element, colum);
         // 因为不再一个层级
         article.authorBrief = $(".item-wrap-top .item-avatar-brief").text();
+        article.content = await parseDetail(`${origin}${article.url}`);
         if (article.url !== articles[lastArticleIndex - 1]?.url) {
-          articles.push(article);
+          // 爬之先跟数据库对比 如果当前文章的时间小于数据库中的时间 则不再爬取
+          // 插入之前先把文章的数据结构更新好
+          // 每爬一条数往进插入一条数据，需要比对 然后再查一下最新的，如果最新的时间小于当前的时间 则不再爬取
+          // 上传成功以后再返回
+          try {
+            const richArtcle = await enrichSingleArticle(article, colum);
+            console.log(richArtcle, "richArtcle");
+            const currentArticlePusblishon = (await queryArticlePublish(
+              "ARTICLE",
+              richArtcle.enrichedArticle.hashId
+            )) as number;
+            if (+richArtcle.enrichedArticle.publishOn < currentArticlePusblishon) {
+              endFlag = true;
+              break;
+            } else {
+              await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+              await putDataToUserDB(richArtcle.enrichUser, "USER");
+            }
+            finalAtcile.push(richArtcle.enrichedArticle);
+          } catch (error) {
+            console.log(error, "error");
+            throw new Error("Failed to enrich article");
+          }
         }
       }
 
@@ -79,16 +104,8 @@ const getArticleList = async (colum: ArticleSource): Promise<ColumnArticle[]> =>
         });
       }
     }
-
-    // 获取每篇文章的详情数据
-    for (let article of articles) {
-      const origin = getOriginFromUrl(colum.href);
-      article.content = await parseDetail(`${origin}${article.url}`);
-    }
-
     await browser.close();
-
-    return articles;
+    return finalAtcile;
   } catch (error) {
     console.log(error, "errprrrrrr");
     throw new Error("Failed to get article list");

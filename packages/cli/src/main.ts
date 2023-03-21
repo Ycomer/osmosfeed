@@ -3,11 +3,13 @@
 import { performance } from "perf_hooks";
 import { discoverSystemFiles } from "./lib/discover-files";
 import { getConfig } from "./lib/get-config";
-import { enrichNews, enrichArticle, News } from "./lib/enrich";
+import { enrichArticle } from "./lib/enrich";
 import { cliVersion } from "./utils/version";
-import { putArticleListToS3, putNewsListToS3 } from "./utils/s3";
+import { putArticleListToS3 } from "./utils/s3";
 import { checkTableExist, putDatasToDB } from "./lib/awsDynamodb";
 import { TableName } from "./constant";
+import { getAllColumnArticles } from "./lib/getArticleList";
+import { getAllNews } from "./lib/getAllNews";
 
 require("dotenv").config();
 
@@ -21,31 +23,15 @@ async function run() {
   console.log(process.env.STATIC_HOST);
   await checkTableExist();
   /**
-   * 1、获取所有的文章（通过爬虫）
-   * 2、对文章进行处理，修饰、过滤、去重
-   * 3、将文章上传到DynamoDB
-   * 4、将文章上传到S3 （列表和详情JSON）
+   * 1、获取所有的文章（通过爬虫）资讯（rss）
+   * 2、对文章进行处理，修饰、过滤、去重 洗好以后直接上传到DynamoDB，之后再上传到S3
    */
-
-  // console.log(config.sources, "what source");
-  const enrichedArticleSource = await Promise.all(config.sources.map((source) => enrichArticle({ source, config })));
-
-  /**
-   *
-   * 1.对RSS拉到的新闻进行处理，修饰、过滤、去重
-   * 2.将新闻列表上传到DynamoDB
-   * 3.将新闻上传到S3（列表和详情JSON）
-   */
-  const enrichedNewsSources = await Promise.all(
-    config.sources.map((source) => !source.type && enrichNews({ source, config }))
-  );
-
-  // 需要找出哪些是新数据，哪些是旧数据，旧数据不需要上传到S3
-  // 上传到DynamoDB
-  await putDatasToDB(enrichedNewsSources, TableName.NEWS);
-  // 上传到S3
-  await putNewsListToS3(enrichedNewsSources, TableName.NEWS);
-
+  // const enrichedArticleSource = await Promise.all(config.sources.map((source) => getAllColumnArticles(source)));
+  const enrichedNewsSource = await (
+    await Promise.all(config.sources.map(async (source) => await getAllNews(source)))
+  ).flatMap((item) => item);
+  console.log(enrichedNewsSource, "enrichedNewsSource");
+  // await putArticleListToS3(enrichedArticleSource);
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
   console.log(`[main] Finished build in ${durationInSeconds} seconds`);
 }

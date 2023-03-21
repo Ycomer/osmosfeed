@@ -1,5 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { Article, News } from "../types";
+import { Article } from "../types";
 import { querySpecificTableData } from "../lib/awsDynamodb";
 import { updateFlagStatus } from "./dataBaseOperation";
 import { PageInfo } from "../constant";
@@ -45,7 +45,7 @@ async function getMaxOrderFromS3(name: string) {
 
 async function putArticleListToS3(list: Article[]) {
   const maxOrder = (await getMaxOrderFromS3("article")) | 1;
-  const finalArticleList: any = [];
+  const resultArray: any = [];
   for (const item of list) {
     try {
       // 查询flag字段的值
@@ -76,51 +76,7 @@ async function putArticleListToS3(list: Article[]) {
         // 文章详情
         await puDataToS3(newPropertysDetial, `article_${item.id}.json')`);
         // 文章当前最大自增json
-        finalArticleList.push(newPropertysList);
-      } else {
-        console.log("flag字段的值为0或者2，不上传");
-      }
-    } catch (error) {
-      console.log(error, "上传出错了");
-    }
-  }
-  // 文章列表
-  const finalOrder = maxOrder + 1;
-  await puDataToS3(finalArticleList, `article_${finalOrder}.json`);
-  await putCurrentMaxOrderToS3(finalOrder, "article");
-}
-
-export async function putNewsListToS3(list: News[], name: string) {
-  const maxOrder = (await getMaxOrderFromS3(name.toLowerCase())) | 0;
-  const resultArray: any = [];
-  // 相当于已经在数据库中进行了去重操作
-  for (const item of list) {
-    try {
-      // 查询flag字段的值
-      const currentFlag = await querySpecificTableData(name.toUpperCase(), item.publishOn);
-      console.log(currentFlag, "currentFlag");
-      if (currentFlag === 1) {
-        const newPropertysList = {
-          id: item.id,
-          title: item.title,
-          imgUrl: item.imgUrl,
-          authorId: item.authorid,
-          authorName: item.authorName,
-          authorAvatar: item.authorAvatar,
-          publishOn: item.publishOn,
-          topTime: item.topTime,
-          snippet: item.snippet,
-          tags: item.tags,
-          updateTime: item.updateTime,
-          apppush: item.apppush,
-        };
-        const newPropertysDetial = {
-          ...newPropertysList,
-          content: item.rawContent,
-        };
-        //资讯详情
-        await puDataToS3(newPropertysDetial, `${name.toLowerCase()}_${item.id}.json`);
-        resultArray.push(newPropertysList);
+        resultArray.push(newPropertysDetial);
       } else {
         console.log("flag字段的值为0或者2，不上传");
         resultArray.push(null);
@@ -130,7 +86,8 @@ export async function putNewsListToS3(list: News[], name: string) {
       resultArray.push(null);
     }
   }
-  await puDataToS3WithError(resultArray, maxOrder, name);
+  // 文章列表
+  await puDataToS3WithError(resultArray, maxOrder, "article");
 }
 
 function sliceArray(list: any) {
