@@ -130,6 +130,14 @@ export interface Article {
    * 默认0 未插入 1 插入成功 2 插入失败
    */
   flag: number;
+  /**
+   * 作者名称
+   */
+  authorName: string;
+  /**
+   * 作者头像
+   */
+  authorAvatar: string;
 }
 export interface User {
   /**

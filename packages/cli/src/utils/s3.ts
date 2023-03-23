@@ -68,6 +68,7 @@ async function putArticleListToS3(list: Article[], tableName: string) {
       const currentFlag = await querySpecificTableData(tableName, item.hashId);
       if (currentFlag === 1) {
         const newPropertysList = {
+          id: item.aid,
           title: item.title,
           imgUrl: item.imgUrl,
           publishOn: item.publishOn,
@@ -83,6 +84,8 @@ async function putArticleListToS3(list: Article[], tableName: string) {
           tSubTitle: item.tSubTitle,
           lastUpdateTime: item.lastUpdateTime,
           apppush: item.apppush,
+          authorName: item.authorName,
+          authorAvatar: item.authorAvatar,
         };
         const newPropertysDetial = {
           ...newPropertysList,
