@@ -3,7 +3,7 @@ import { Article } from "../types";
 import { querySpecificTableData } from "../lib/awsDynamodb";
 import { updateFlagStatus } from "./dataBaseOperation";
 import { PageInfo } from "../constant";
-
+import { lookup } from "mime-types";
 const client = new S3Client({
   region: process.env.STATIC_REGION,
 });
@@ -11,10 +11,26 @@ const client = new S3Client({
 // 上传数据到S3
 export async function puDataToS3(content: any, keyname: string) {
   const stream = Buffer.from(JSON.stringify(content, undefined, 2));
+  const getfileExtension = keyname.split(".")[1];
+  const policy = {
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Sid: "PublicReadGetObject",
+        Effect: "Allow",
+        Principal: "*",
+        Action: ["s3:GetObject"],
+        Resource: [`arn:aws:s3:::${process.env.STATIC_BUCKET}/*`],
+      },
+    ],
+  };
   const params = {
     Bucket: process.env.STATIC_BUCKET,
     Key: keyname,
     Body: stream,
+    ContentType: lookup(getfileExtension) || "application/json",
+    ACL: "public-read",
+    Policy: JSON.stringify(policy),
   };
   const command = new PutObjectCommand(params);
   try {

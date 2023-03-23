@@ -19,7 +19,7 @@ async function run() {
 
   const systemFiles = await discoverSystemFiles();
   const config = await getConfig(systemFiles.configFile);
-  // 校验下表是否都创建
+  // 校验下表是否都创建, 没创建的话先进行创建
   console.log(process.env.STATIC_HOST);
   await checkTableExist();
   /**
@@ -30,7 +30,7 @@ async function run() {
     const resultArray: any = [];
     for (const source of config.sources) {
       const ArticleLists = await getAllColumnArticles(source);
-      resultArray.push(ArticleLists);
+      resultArray.push(...ArticleLists);
     }
     return resultArray;
   };
@@ -44,11 +44,11 @@ async function run() {
     return resultArray;
   };
 
-  // const enrichedArticleLists = (await enrichedArticleSource());
+  const enrichedArticleLists = await enrichedArticleSource();
   const enrichedNewsLists = await enrichedNewsSource();
-  // await putArticleListToS3(enrichedArticleLists, TableName.ARTICLE);
-  await putArticleListToS3(enrichedNewsLists, TableName.ARTICLE);
-
+  // 所有的文章合并之后上传S3
+  const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists];
+  await putArticleListToS3(finalArticleLists, TableName.ARTICLE);
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
   console.log(`[main] Finished build in ${durationInSeconds} seconds`);
 }

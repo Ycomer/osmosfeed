@@ -80,6 +80,7 @@ const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
           // 每爬一条数往进插入一条数据，需要比对 然后再查一下最新的，如果最新的时间小于当前的时间 则不再爬取
           // 上传成功以后再返回
           try {
+            // 需要优化下，在没有判定当前专栏是否已经存在之前不做任何上传操作
             const richArtcle = await enrichSingleArticle(article, colum);
             console.log(richArtcle, "richArtcle");
             // 查询作者是否已经写入

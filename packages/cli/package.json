@@ -46,6 +46,7 @@
     "install": "^0.13.0",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
+    "mime-types": "^2.1.35",
     "mongodb": "^5.1.0",
     "mongoose": "^7.0.2",
     "npm": "^9.6.2",
@@ -56,6 +57,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
+    "@types/mime-types": "^2.1.1",
     "@types/node": "^16.11.24",
     "@types/uuid": "^9.0.1",
     "@vitest/ui": "^0.15.1",
