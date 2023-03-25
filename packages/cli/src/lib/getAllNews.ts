@@ -47,12 +47,11 @@ export async function checkAndUploadNews(list: ColumnArticle[], source: Source) 
       // 表里没有这个hash文章，直接插入
       if (currentItems.length === 0) {
         await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+        finalAtcile.push(richArtcle.enrichedArticle);
       }
-
       if (userCount === 0) {
         await putDataToUserDB(richArtcle.enrichUser, "USER");
       }
-      finalAtcile.push(richArtcle.enrichedArticle);
     } catch (error) {
       console.log(error, "error");
       throw new Error("Failed to enrich article");

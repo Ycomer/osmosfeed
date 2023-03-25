@@ -99,11 +99,12 @@ const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
               break;
             } else {
               await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+              //库里没有才插入
+              finalAtcile.push(richArtcle.enrichedArticle);
             }
             if (userCount === 0) {
               await putDataToUserDB(richArtcle.enrichUser, "USER");
             }
-            finalAtcile.push(richArtcle.enrichedArticle);
           } catch (error) {
             console.log(error, "error");
             throw new Error("Failed to enrich article");

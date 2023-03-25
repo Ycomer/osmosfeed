@@ -43,6 +43,7 @@ export async function enrichSingleArticle(item: ColumnArticle, source: Source) {
     tTitle: "",
     tSubTitle: "",
     authorName: item.authorName,
+    authorAvatar: item.authorAvatar,
     lastUpdateTime: getCurrentTime(),
     createTime: getCurrentTime(),
   };

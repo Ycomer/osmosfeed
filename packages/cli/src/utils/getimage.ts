@@ -12,7 +12,7 @@ const uploadImageAndGetPath = async (imgUrl: string): Promise<string> => {
       return uploadImageDataToS3(imgUrl, imageKeyName);
     } else {
       const imgPath = `static/${imageName}.png`;
-      const { data } = await axios.get(imgUrl, { responseType: "arraybuffer" });
+      const { data } = await axios.get(imgUrl);
       await puDataToS3(data, imgPath);
       return imgPath;
     }

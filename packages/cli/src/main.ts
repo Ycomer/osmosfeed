@@ -4,7 +4,7 @@ import { performance } from "perf_hooks";
 import { discoverSystemFiles } from "./lib/discover-files";
 import { getConfig } from "./lib/get-config";
 import { cliVersion } from "./utils/version";
-import { putArticleListToS3 } from "./utils/s3";
+import { putArticleListToS3, putSpecialAticleListToS3 } from "./utils/s3";
 import { checkTableExist } from "./lib/awsDynamodb";
 import { TableName } from "./constant";
 import { getAllColumnArticles } from "./lib/getArticleList";
@@ -46,9 +46,13 @@ async function run() {
 
   const enrichedArticleLists = await enrichedArticleSource();
   const enrichedNewsLists = await enrichedNewsSource();
-  // 所有的文章合并之后上传S3
-  const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists];
+  // 所有的文章合并之后上传S3 按照降序排列，最新的文章在最后面
+  const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists].sort((a, b) => {
+    return new Date(a.publishon).getTime() - new Date(b.publishon).getTime();
+  });
   await putArticleListToS3(finalArticleLists, TableName.ARTICLE);
+  await putSpecialAticleListToS3(enrichedArticleLists, TableName.ARTICLE, "column");
+  await putSpecialAticleListToS3(enrichedArticleLists, TableName.ARTICLE, "topic");
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
   console.log(`[main] Finished build in ${durationInSeconds} seconds`);
 }

@@ -8,7 +8,7 @@
 timezone: America/Los_Angeles
 sources:
   - title: TokenInsight
-    href: https://tokeninsight.com/rss/zh
+    href: https://tokeninsight.com/rss/news/zh
     logo: https://s2.tokeninsight.com/frontend/images/favicon.png
     type: 0
     lang: 0
