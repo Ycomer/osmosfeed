@@ -112,7 +112,7 @@ export const querySpecificTableData = async (name: string, id: string) => {
     return data.Count;
   } catch (error) {
     console.error(error);
-    throw error;
+    return null;
   }
 };
 // 查询文章的发布时间
@@ -123,7 +123,7 @@ export const queryArticlePublish = async (name: string, hash: string) => {
     return data;
   } catch (error) {
     console.error(error, "查询出错了");
-    throw error;
+    return null;
   }
 };
 // 查询用户的id
@@ -134,7 +134,7 @@ export const queryUserIdStatus = async (name: string, uid: string) => {
     return data;
   } catch (error) {
     console.error(error, "查询用户出错了");
-    throw error;
+    return null;
   }
 };
 // 查询某个用户最新的文章
@@ -146,7 +146,7 @@ export const queryUsersNewArticle = async (name: string, cid: string) => {
     return data;
   } catch (error) {
     console.error(error, "查询用户出错了");
-    throw error;
+    return null;
   }
 };
 

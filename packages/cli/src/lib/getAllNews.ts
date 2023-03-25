@@ -40,17 +40,22 @@ export async function checkAndUploadNews(list: ColumnArticle[], source: Source) 
       const richArtcle = await enrichSingleArticle(item, source);
       console.log(richArtcle, "richArtcle");
       // 查询文章是否已经写入
-      const { Count, Items } = await queryArticlePublish("ARTICLE", richArtcle.enrichedArticle.hashId);
+      const resArticle = await queryArticlePublish("ARTICLE", richArtcle.enrichedArticle.hashId);
       // 查询作者是否已经写入
-      const { Count: userCount, Items: userItems } = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
-      const currentItems = Items as any;
-      // 表里没有这个hash文章，直接插入
-      if (currentItems.length === 0) {
-        await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
-        finalAtcile.push(richArtcle.enrichedArticle);
+      const resUser = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
+      if (resArticle) {
+        const { Count, Items: currentItems } = resArticle;
+        if (currentItems.length === 0) {
+          // 表里没有这个hash文章，直接插入
+          await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+          finalAtcile.push(richArtcle.enrichedArticle);
+        }
       }
-      if (userCount === 0) {
-        await putDataToUserDB(richArtcle.enrichUser, "USER");
+      if (resUser) {
+        const { Count: userCount, Items: userItems } = resUser;
+        if (userCount === 0) {
+          await putDataToUserDB(richArtcle.enrichUser, "USER");
+        }
       }
     } catch (error) {
       console.log(error, "error");

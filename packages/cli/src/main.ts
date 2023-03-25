@@ -4,7 +4,7 @@ import { performance } from "perf_hooks";
 import { discoverSystemFiles } from "./lib/discover-files";
 import { getConfig } from "./lib/get-config";
 import { cliVersion } from "./utils/version";
-import { putArticleListToS3, putSpecialAticleListToS3 } from "./utils/s3";
+import { putArticleListToS3, putSpecialAticleListToS3, putSpecialTypeAticleListToS3 } from "./utils/s3";
 import { checkTableExist } from "./lib/awsDynamodb";
 import { TableName } from "./constant";
 import { getAllColumnArticles } from "./lib/getArticleList";
@@ -43,16 +43,20 @@ async function run() {
     }
     return resultArray;
   };
-
+  // 专栏文章解析
   const enrichedArticleLists = await enrichedArticleSource();
+  // 专题文章解析
+  // const entichTopicArticleLists = await enrichedTopicArticleSource();
+  // 资讯文章解析
   const enrichedNewsLists = await enrichedNewsSource();
   // 所有的文章合并之后上传S3 按照降序排列，最新的文章在最后面
   const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists].sort((a, b) => {
     return new Date(a.publishon).getTime() - new Date(b.publishon).getTime();
   });
   await putArticleListToS3(finalArticleLists, TableName.ARTICLE);
-  await putSpecialAticleListToS3(enrichedArticleLists, TableName.ARTICLE, "column");
-  await putSpecialAticleListToS3(enrichedArticleLists, TableName.ARTICLE, "topic");
+  // await putSpecialAticleListToS3(entichTopicArticleLists, "topc");
+  await putSpecialAticleListToS3(enrichedArticleLists, "column");
+  await putSpecialTypeAticleListToS3(enrichedArticleLists);
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
   console.log(`[main] Finished build in ${durationInSeconds} seconds`);
 }

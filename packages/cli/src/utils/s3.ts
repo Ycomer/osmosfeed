@@ -55,7 +55,7 @@ async function getMaxOrderFromS3(name: string) {
     const data = JSON.parse(jsonString as string);
     return data.name;
   } catch (error) {
-    console.log(error);
+    console.log(error, "获取最大页数失败");
   }
 }
 // 获取当前最大页数内容
@@ -136,11 +136,10 @@ async function puDataToS3WithError(list: any, maxOrder: number, tablename: strin
   // 根据当前最大的order值，计算出已经上传的数据的大小， 讲剩余的数据进行分页上传即可
   let mutipleList = [];
   const pageSize = PageInfo.chunkSize;
-  let finalNewsList = list.filter((item: any) => item !== null);
   let finalOrder = maxOrder;
   const startIdx = pageSize * (maxOrder - 1);
   let dataInCurrentPage: any[] = startIdx === 0 ? [] : await getMaxPageFromS3(tablename.toLowerCase(), finalOrder - 1);
-  mutipleList = [...dataInCurrentPage, ...finalNewsList];
+  mutipleList = [...dataInCurrentPage, ...list];
   const listNews = sliceArray(mutipleList);
   for (const item of listNews) {
     try {
@@ -160,6 +159,13 @@ async function putCurrentMaxOrderToS3(maxOrder: number, tablename: string) {
   puDataToS3(Order, `${tablename.toLowerCase()}_max_rder.json`);
 }
 
+async function putCurrentMaxOrderToS3WithoutUpper(maxOrder: number, name: string) {
+  const Order = {
+    name: maxOrder,
+  };
+  puDataToS3(Order, `${name}_max_rder.json`);
+}
+
 // 上传专栏/专题的列表
 // 直接获取每一个作者最新的文章一篇， 返回这个列表即可，可分页
 // 专栏/专题的详情列表，直接获取每一个作者的所有文章，返回这个列表即可，可分页
@@ -169,21 +175,24 @@ async function putCurrentMaxOrderToS3(maxOrder: number, tablename: string) {
  * @param type 专栏/专题
  * */
 export async function putSpecialAticleListToS3(list: Article[], type: string) {
-  const maxOrder = (await getMaxOrderFromS3(type)) | 1;
-  const allCids = Array.from(new Set(list.map((item) => item.cid)));
-  const newestArticles = allCids.map((cid) => {
-    const articlesInCid = list.filter((item) => item.cid === cid);
-    const newestArticle = articlesInCid.reduce(
-      (currentNewest, article) => (article.publishOn > currentNewest.publishOn ? article : currentNewest),
-      articlesInCid[0] // 将初始值设置为cid下的第一篇文章
-    );
-    return newestArticle;
-  });
-  newestArticles.sort((a, b) => b.publishOn.localeCompare(a.publishOn));
-  //文章列表
-  await puDataToS3WithError(newestArticles, maxOrder, type);
-
-  //专栏/专题的详情列表，直接获取每一个作者的所有文章，返回这个列表即可，可分页
+  try {
+    const maxOrder = (await getMaxOrderFromS3(type)) | 1;
+    const allCids = Array.from(new Set(list.map((item) => item.cid)));
+    const newestArticles = allCids.map((cid) => {
+      const articlesInCid = list.filter((item) => item.cid === cid);
+      const newestArticle = articlesInCid.reduce(
+        (currentNewest, article) => (article.publishOn > currentNewest.publishOn ? article : currentNewest),
+        articlesInCid[0] // 将初始值设置为cid下的第一篇文章
+      );
+      return newestArticle;
+    });
+    newestArticles.sort((a, b) => b.publishOn.localeCompare(a.publishOn));
+    //文章列表
+    await puDataToS3WithError(newestArticles, maxOrder, type);
+    //专栏/专题的详情列表，直接获取每一个作者的所有文章，返回这个列表即可，可分页
+  } catch (error) {
+    console.log(error, "上传出错了");
+  }
 }
 
 // 上传专栏/专题的详情列表
@@ -194,7 +203,7 @@ export async function putSpecialAticleListToS3(list: Article[], type: string) {
  * @param type 专栏/专题
  * */
 
-export async function putSpecialTypeAticleListToS3(list: Article[], type: string) {
+export async function putSpecialTypeAticleListToS3(list: Article[]) {
   // 获取所有的cid
   const allCids = Array.from(new Set(list.map((item) => item.cid)));
 
@@ -208,25 +217,24 @@ export async function putSpecialTypeAticleListToS3(list: Article[], type: string
 
   for (const item of articlesByCid) {
     //文章列表
-    await specialAticleListWithError(item, type);
+    await specialAticleListWithError(item);
   }
 }
 
-async function specialAticleListWithError(list: any, tablename: string) {
+async function specialAticleListWithError(list: any) {
   const maxOrder = (await getMaxOrderFromS3(list.id)) | 1;
   // 根据当前最大的order值，计算出已经上传的数据的大小， 讲剩余的数据进行分页上传即可
   let mutipleList = [];
   const pageSize = PageInfo.chunkSize;
-  let finalNewsList = list.filter((item: any) => item !== null);
   let finalOrder = maxOrder;
   const startIdx = pageSize * (maxOrder - 1);
   let dataInCurrentPage: any[] = startIdx === 0 ? [] : await getMaxPageFromS3(list.id, finalOrder - 1);
-  mutipleList = [...dataInCurrentPage, ...finalNewsList];
+  mutipleList = [...dataInCurrentPage, ...list.articles];
   const listNews = sliceArray(mutipleList);
   for (const item of listNews) {
     try {
       await puDataToS3(item, `${item.cid}_${++finalOrder}.json`);
-      await putCurrentMaxOrderToS3(finalOrder, item.cid);
+      await putCurrentMaxOrderToS3WithoutUpper(finalOrder, item.cid);
     } catch (error) {
       console.log(error, "上传s3失败");
     }

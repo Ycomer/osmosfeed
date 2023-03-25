@@ -84,26 +84,30 @@ const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
             const richArtcle = await enrichSingleArticle(article, colum);
             console.log(richArtcle, "richArtcle");
             // 查询作者是否已经写入
-            const { Count: userCount, Items: userItems } = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
-
+            const resUser = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
             // 查询当前用户最新的文章
-            const { Count: articleCount, Items } = await queryUsersNewArticle(
-              "ARTICLE",
-              richArtcle.enrichedArticle.cid
-            );
-            if (
-              articleCount > 0 &&
-              Number(richArtcle.enrichedArticle.publishOn) > Number(Items && Items[0].publishon.S)
-            ) {
-              endFlag = true;
-              break;
-            } else {
-              await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
-              //库里没有才插入
-              finalAtcile.push(richArtcle.enrichedArticle);
+            const resArticle = await queryUsersNewArticle("ARTICLE", richArtcle.enrichedArticle.cid);
+
+            if (resArticle) {
+              const { Count: articleCount, Items } = resArticle;
+              if (
+                articleCount > 0 &&
+                Number(richArtcle.enrichedArticle.publishOn) > Number(Items && Items[0].publishon.S)
+              ) {
+                endFlag = true;
+                break;
+              } else {
+                await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+                //库里没有才插入
+                finalAtcile.push(richArtcle.enrichedArticle);
+              }
             }
-            if (userCount === 0) {
-              await putDataToUserDB(richArtcle.enrichUser, "USER");
+
+            if (resUser) {
+              const { Count: userCount, Items: userItems } = resUser;
+              if (userCount === 0) {
+                await putDataToUserDB(richArtcle.enrichUser, "USER");
+              }
             }
           } catch (error) {
             console.log(error, "error");
