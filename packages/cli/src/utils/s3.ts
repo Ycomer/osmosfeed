@@ -39,7 +39,7 @@ export async function puDataToS3(content: any, keyname: string) {
   } catch (error) {
     console.log(error);
   } finally {
-    console.log("上传到S3成功");
+    console.log(keyname, "上传到S3成功");
   }
 }
 // 上传图片到S3
@@ -71,7 +71,7 @@ export async function putImagesToS3(content: any, keyname: string, contentType: 
   } catch (error) {
     console.log(error);
   } finally {
-    console.log("上传到S3成功");
+    console.log(keyname, "上传到S3成功");
   }
 }
 // 获取桶下面的指定前缀的文件

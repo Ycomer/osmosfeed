@@ -16,7 +16,6 @@ const uploadImageAndGetPath = async (imgUrl: string): Promise<string> => {
     return imgPath;
   } catch (error) {
     console.error(error);
-    console.log(error, "获取图片地址失败");
     throw error;
   }
 };
@@ -43,7 +42,6 @@ const uploadImageAndGetPathFromList = async (imgList: string[]) => {
   const imgPathList: any = [];
   for (const imgUrl of imgList) {
     const imgPath = await uploadImageAndGetPath(imgUrl);
-    console.log(imgPath, "处理好的imgPath");
     imgPathList.push(imgPath);
   }
   return imgPathList;

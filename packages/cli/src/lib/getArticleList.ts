@@ -24,7 +24,6 @@ const parseArticle = async (element: any, colum: ArticleSource) => {
   // 讲图片也上传
   const imgUrl = element.find(".topic-content-right img").attr("src") as string;
   const avatarUrl = element.find(".topic-avatar img").attr("src") as string;
-  console.log(imgUrl, "当前图片地址");
   article.imgUrl = await uploadImageAndGetPath(imgUrl);
   article.url = element.find(".topic-body a").attr("href");
   article.lang = colum.lang;
