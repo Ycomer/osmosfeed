@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { Article } from "../types";
 import { querySpecificTableData } from "../lib/awsDynamodb";
+import { Upload } from "@aws-sdk/lib-storage";
 import { updateFlagStatus } from "./dataBaseOperation";
 import { PageInfo } from "../constant";
 import { lookup } from "mime-types";
@@ -8,10 +9,9 @@ const client = new S3Client({
   region: process.env.STATIC_REGION,
 });
 
-// 上传数据到S3
+// 上传json到S3
 export async function puDataToS3(content: any, keyname: string) {
   const stream = Buffer.from(JSON.stringify(content, undefined, 2));
-  const getfileExtension = keyname.split(".")[1];
   const policy = {
     Version: "2012-10-17",
     Statement: [
@@ -28,7 +28,7 @@ export async function puDataToS3(content: any, keyname: string) {
     Bucket: process.env.STATIC_BUCKET,
     Key: keyname,
     Body: stream,
-    ContentType: lookup(getfileExtension) || "application/json",
+    ContentType: "application/json",
     ACL: "public-read",
     Policy: JSON.stringify(policy),
   };
@@ -42,7 +42,38 @@ export async function puDataToS3(content: any, keyname: string) {
     console.log("上传到S3成功");
   }
 }
-
+// 上传图片到S3
+export async function putImagesToS3(content: any, keyname: string, contentType: string) {
+  const policy = {
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Sid: "PublicReadGetObject",
+        Effect: "Allow",
+        Principal: "*",
+        Action: ["s3:GetObject"],
+        Resource: [`arn:aws:s3:::${process.env.STATIC_BUCKET}/*`],
+      },
+    ],
+  };
+  const params = {
+    Bucket: process.env.STATIC_BUCKET,
+    Key: keyname,
+    Body: content,
+    ContentType: contentType,
+    ACL: "public-read",
+    Policy: JSON.stringify(policy),
+  };
+  const command = new PutObjectCommand(params);
+  try {
+    const data = await client.send(command);
+    return data;
+  } catch (error) {
+    console.log(error);
+  } finally {
+    console.log("上传到S3成功");
+  }
+}
 // 获取桶下面的指定前缀的文件
 async function getMaxOrderFromS3(name: string) {
   const params = {
@@ -143,7 +174,7 @@ async function puDataToS3WithError(list: any, maxOrder: number, tablename: strin
   const listNews = sliceArray(mutipleList);
   for (const item of listNews) {
     try {
-      await puDataToS3(item, `${tablename.toLowerCase()}_${++finalOrder}.json`);
+      await puDataToS3(item, `${tablename.toLowerCase()}_${finalOrder++}.json`);
       await putCurrentMaxOrderToS3(finalOrder, tablename);
     } catch (error) {
       // If an error occurs, set the 'flag' field to 2.
@@ -233,8 +264,8 @@ async function specialAticleListWithError(list: any) {
   const listNews = sliceArray(mutipleList);
   for (const item of listNews) {
     try {
-      await puDataToS3(item, `${item.cid}_${++finalOrder}.json`);
-      await putCurrentMaxOrderToS3WithoutUpper(finalOrder, item.cid);
+      await puDataToS3(item, `${list.id}_${finalOrder++}.json`);
+      await putCurrentMaxOrderToS3WithoutUpper(finalOrder, list.id);
     } catch (error) {
       console.log(error, "上传s3失败");
     }

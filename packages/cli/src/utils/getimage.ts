@@ -1,39 +1,35 @@
 // 获取图片地址并上传到s3，返回s3的相对路径
 import axios from "axios";
-import { puDataToS3 } from "./s3";
+import { putImagesToS3 } from "./s3";
 import { isBase64 } from "../utils/tools";
 import { randomWithImageName } from "../utils/random";
+import fs from "fs";
+import { promisify } from "util";
+import fetch from "node-fetch";
 
 const uploadImageAndGetPath = async (imgUrl: string): Promise<string> => {
   const imageName = randomWithImageName();
   try {
-    if (isBase64(imgUrl)) {
-      const imageKeyName = `${imageName}.png`;
-      return uploadImageDataToS3(imgUrl, imageKeyName);
-    } else {
-      const imgPath = `static/${imageName}.png`;
-      const { data } = await axios.get(imgUrl);
-      await puDataToS3(data, imgPath);
-      return imgPath;
-    }
+    const { imgData, contentType } = await downloadImage(imgUrl);
+    const imgPath = `static/${imageName}.png`;
+    await putImagesToS3(imgData, imgPath, contentType);
+    return imgPath;
   } catch (error) {
     console.error(error);
     console.log(error, "获取图片地址失败");
     throw error;
   }
 };
-
-// 上传图片
-const uploadImageDataToS3 = async (data: ArrayBuffer | string, keyName: string): Promise<string> => {
-  try {
-    await puDataToS3(data, `static/${keyName}`);
-    return `static/${keyName}`;
-  } catch (error) {
-    console.error(error);
-    console.log(error, "上传图片失败");
-    throw error;
+// 下载网络图片
+async function downloadImage(url: string): Promise<Buffer> {
+  const fuckRespone = await fetch(url);
+  const finalData = await fuckRespone.arrayBuffer();
+  const contentType = fuckRespone.headers.get("content-type");
+  if (!contentType?.includes("image")) {
+    throw new Error("Invalid content type");
   }
-};
+  return { imgData: finalData, contentType };
+}
 
 // 图片压缩
 // const optimizeImg = async (data: any) => {

@@ -53,8 +53,9 @@ async function run() {
   const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists].sort((a, b) => {
     return new Date(a.publishon).getTime() - new Date(b.publishon).getTime();
   });
+
   await putArticleListToS3(finalArticleLists, TableName.ARTICLE);
-  // await putSpecialAticleListToS3(entichTopicArticleLists, "topc");
+  // await putSpecialAticleListToS3(entichTopicArticleLists, "topic");
   await putSpecialAticleListToS3(enrichedArticleLists, "column");
   await putSpecialTypeAticleListToS3(enrichedArticleLists);
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
