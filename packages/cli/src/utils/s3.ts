@@ -174,7 +174,9 @@ async function puDataToS3WithError(list: any, maxOrder: number, tablename: strin
   const listNews = sliceArray(mutipleList);
   for (const item of listNews) {
     try {
-      await puDataToS3(item, `${tablename.toLowerCase()}_${finalOrder++}.json`);
+      // 显示器在每一页的数据需要升序
+      const sortedItem = item.sort((a, b) => Number(b.publishedOn) - Number(a.publishedOn));
+      await puDataToS3(sortedItem, `${tablename.toLowerCase()}_${finalOrder++}.json`);
       await putCurrentMaxOrderToS3(finalOrder, tablename);
     } catch (error) {
       // If an error occurs, set the 'flag' field to 2.
@@ -217,7 +219,7 @@ export async function putSpecialAticleListToS3(list: Article[], type: string) {
       );
       return newestArticle;
     });
-    newestArticles.sort((a, b) => b.publishOn.localeCompare(a.publishOn));
+    newestArticles.sort((a, b) => Number(a.publishOn) - Number(b.publishOn));
     //文章列表
     await puDataToS3WithError(newestArticles, maxOrder, type);
     //专栏/专题的详情列表，直接获取每一个作者的所有文章，返回这个列表即可，可分页
@@ -242,7 +244,7 @@ export async function putSpecialTypeAticleListToS3(list: Article[]) {
   const articlesByCid = allCids.map((cid) => {
     const articlesInCid = list
       .filter((item) => item.cid === cid)
-      .sort((a, b) => b.publishOn.localeCompare(a.publishOn));
+      .sort((a, b) => Number(a.publishOn) - Number(b.publishOn));
     return { id: cid, articles: articlesInCid };
   });
 
@@ -264,7 +266,8 @@ async function specialAticleListWithError(list: any) {
   const listNews = sliceArray(mutipleList);
   for (const item of listNews) {
     try {
-      await puDataToS3(item, `${list.id}_${finalOrder++}.json`);
+      const sortedItem = item.sort((a, b) => Number(b.publishedOn) - Number(a.publishedOn));
+      await puDataToS3(sortedItem, `${list.id}_${finalOrder++}.json`);
       await putCurrentMaxOrderToS3WithoutUpper(finalOrder, list.id);
     } catch (error) {
       console.log(error, "上传s3失败");

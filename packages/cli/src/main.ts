@@ -51,7 +51,7 @@ async function run() {
   const enrichedNewsLists = await enrichedNewsSource();
   // 所有的文章合并之后上传S3 按照降序排列，最新的文章在最后面
   const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists].sort((a, b) => {
-    return new Date(a.publishon).getTime() - new Date(b.publishon).getTime();
+    return Number(a.publishOn) - Number(b.publishOn);
   });
 
   await putArticleListToS3(finalArticleLists, TableName.ARTICLE);
