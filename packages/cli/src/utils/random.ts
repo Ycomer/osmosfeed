@@ -33,7 +33,8 @@ function getIdWithType(type: number) {
   };
   if (type === 2) {
     prefix.customId = `c_${uuidv4()}`;
-  } else if (type === 3) {
+    prefix.typeId = 2;
+  } else if (type === 1) {
     prefix.customId = `t${uuidv4()}`;
     prefix.typeId = 1;
   } else if (type === 0) {

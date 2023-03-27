@@ -35,6 +35,7 @@ async function run() {
     }
     return resultArray;
   };
+
   const enrichedTopicSource = async () => {
     const resultArray: any = [];
     for (const source of config.sources) {
@@ -43,6 +44,7 @@ async function run() {
     }
     return resultArray;
   };
+
   const enrichedNewsSource = async () => {
     const resultArray: Article[] = [];
     for (const source of config.sources) {

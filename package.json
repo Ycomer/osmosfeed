@@ -24,8 +24,5 @@
   "homepage": "https://github.com/Ycomer/feed#readme",
   "workspaces": [
     "./packages/*"
-  ],
-  "dependencies": {
-    "puppeteer": "^19.7.5"
-  }
+  ]
 }

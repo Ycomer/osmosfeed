@@ -23,7 +23,19 @@ sources:
     type: 0
     lang: 0
   - title: Vitalik Buterin
-    href: "https://foresightnews.pro/column/detail/58"
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Vitalik_Buterin_TechCrunch_London_2015_%28cropped%29.jpg/500px-Vitalik_Buterin_TechCrunch_London_2015_%28cropped%29.jpg"
+    href: https://foresightnews.pro/column/detail/58
+    logo: https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Vitalik_Buterin_TechCrunch_London_2015_%28cropped%29.jpg/500px-Vitalik_Buterin_TechCrunch_London_2015_%28cropped%29.jpg
     type: 2
     lang: 0
+  - title: 比特币
+    href: https://foresightnews.pro/topic/timeline/detail/8
+    logo: https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Bitcoin.svg/1200px-Bitcoin.png
+    type: 1
+    lang: 0
+    tag: 0
+  - title: Arbitrum
+    href: https://foresightnews.pro/topic/timeline/detail/71
+    logo: https://logowik.com/content/uploads/images/arbitrum4053.jpg
+    type: 1
+    lang: 0
+    tag: 1

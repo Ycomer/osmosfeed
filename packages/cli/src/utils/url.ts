@@ -28,3 +28,9 @@ export function resolveRelativeUrl(targetUrl: string, baseUrl: string): string |
     return null;
   }
 }
+
+export function isIntrenalUrl(fromUrl: string, toUrl: string) {
+  const fromUrlPath = new URL(fromUrl);
+  const toUrlPath = new URL(toUrl);
+  return fromUrlPath.origin === toUrlPath.origin;
+}
