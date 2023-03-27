@@ -9,6 +9,7 @@ import { checkTableExist } from "./lib/awsDynamodb";
 import { TableName } from "./constant";
 import { getAllColumnArticles } from "./lib/getArticleList";
 import { getAllNews } from "./lib/getAllNews";
+import { getAllTopicArticles } from "./lib/getAllTopicArticles";
 import { Article } from "./types";
 
 require("dotenv").config();
@@ -34,7 +35,14 @@ async function run() {
     }
     return resultArray;
   };
-
+  const enrichedTopicSource = async () => {
+    const resultArray: any = [];
+    for (const source of config.sources) {
+      const ArticleLists = await getAllTopicArticles(source);
+      resultArray.push(...ArticleLists);
+    }
+    return resultArray;
+  };
   const enrichedNewsSource = async () => {
     const resultArray: Article[] = [];
     for (const source of config.sources) {
@@ -43,19 +51,20 @@ async function run() {
     }
     return resultArray;
   };
+
   // 专栏文章解析
   const enrichedArticleLists = await enrichedArticleSource();
   // 专题文章解析
-  // const entichTopicArticleLists = await enrichedTopicArticleSource();
+  const entichTopicArticleLists = await enrichedTopicSource();
   // 资讯文章解析
   const enrichedNewsLists = await enrichedNewsSource();
   // 所有的文章合并之后上传S3 按照降序排列，最新的文章在最后面
-  const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists].sort((a, b) => {
+  const finalArticleLists = [...enrichedArticleLists, ...enrichedNewsLists, ...entichTopicArticleLists].sort((a, b) => {
     return Number(a.publishOn) - Number(b.publishOn);
   });
 
   await putArticleListToS3(finalArticleLists, TableName.ARTICLE);
-  // await putSpecialAticleListToS3(entichTopicArticleLists, "topic");
+  await putSpecialAticleListToS3(entichTopicArticleLists, "topic");
   await putSpecialAticleListToS3(enrichedArticleLists, "column");
   await putSpecialTypeAticleListToS3(enrichedArticleLists);
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
