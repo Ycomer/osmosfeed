@@ -68,7 +68,10 @@ async function run() {
   await putArticleListToS3(finalArticleLists, TableName.ARTICLE);
   await putSpecialAticleListToS3(entichTopicArticleLists, "topic");
   await putSpecialAticleListToS3(enrichedArticleLists, "column");
+  // 专栏列表
   await putSpecialTypeAticleListToS3(enrichedArticleLists);
+  // 专题列表
+  await putSpecialTypeAticleListToS3(entichTopicArticleLists);
   const durationInSeconds = ((performance.now() - startTime) / 1000).toFixed(2);
   console.log(`[main] Finished build in ${durationInSeconds} seconds`);
 }

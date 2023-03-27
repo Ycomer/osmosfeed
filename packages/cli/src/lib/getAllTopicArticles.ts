@@ -163,7 +163,8 @@ const getTopicList = async (colum: ArticleSource): Promise<Article[]> => {
     await browser.close();
     return finalAtcile;
   } catch (error) {
-    throw new Error("Failed to get topic article list");
+    console.log(error, "cknima");
+    throw new Error("Failed to get topic article list", error);
   }
 };
 
