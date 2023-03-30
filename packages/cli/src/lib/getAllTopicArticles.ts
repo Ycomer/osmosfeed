@@ -33,7 +33,7 @@ const parseArticle = async (element: any, colum: ArticleSource) => {
   article.url = await element.$eval(".topic-body a", (url) => url.href || "");
   article.lang = colum.lang;
   article.authorName = colum.title;
-  article.authorAvatar = "";
+  article.authorAvatar = await uploadImageAndGetPath(colum.logo);
   return article;
 };
 

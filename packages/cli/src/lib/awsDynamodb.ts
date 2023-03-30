@@ -21,10 +21,18 @@ export const TableList = [
 
 export const checkTableExist = async () => {
   try {
+    const tableName = await listTableImme();
+    const isExisted = await handleCheckTableExist(tableName);
+    return isExisted;
+  } catch (err) {
+    console.log("Error", err);
+  }
+};
+
+export const listTableImme = async () => {
+  try {
     const data = await ddbClient.send(new ListTablesCommand({}));
-    console.log("Table Listed", data.TableNames);
-    await handleCheckTableExist(data.TableNames);
-    return data;
+    return data.TableNames;
   } catch (err) {
     console.log("Error", err);
   }
@@ -41,14 +49,17 @@ export const createTable = async (params: any) => {
 };
 
 export async function handleCheckTableExist(table: any) {
+  let isTableExist = false; // 增加一个变量来表示表是否存在
   for (const item of TableList) {
     if (table?.includes(item.name)) {
       console.log("Table Existed", item.name);
+      isTableExist = true; // 如果表存在，将变量设置为 true
     } else {
       console.log("Table Not Existed", item.name);
       await createTable(item.param);
     }
   }
+  return isTableExist; // 返回变量值
 }
 
 export const putDataToDataBase = async (params: any) => {
@@ -149,7 +160,7 @@ export const queryUsersNewArticle = async (name: string, hashid: string) => {
     const items = data.Items?.map((item) => unmarshall(item));
     return items;
   } catch (error) {
-    console.error(error, "查询用户出错了");
+    console.error(error, "查询当前文章是否存在出错了");
     return null;
   }
 };

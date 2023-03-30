@@ -24,7 +24,7 @@ export async function getAllNews(source: Source): Promise<Article[]> {
       throw err;
     });
     // const rawFeed = parser.parse(xmlString);
-    const feed = normalizeFeed(rawFeed, source);
+    const feed = await normalizeFeed(rawFeed, source);
     const newsArticle = await checkAndUploadNews(feed, source);
     return newsArticle;
   } catch (error) {

@@ -119,7 +119,7 @@ const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
     await browser.close();
     return finalAtcile;
   } catch (error) {
-    throw new Error("Failed to get article list");
+    throw new Error("Failed to get article list", error);
   }
 };
 
