@@ -26,7 +26,7 @@ export interface ColumnArticle {
   url: string;
   title: string;
   content: string;
-  publishon: string;
+  publishon: number;
   imgUrl: string;
   descp: string;
   lang: number;
@@ -67,7 +67,7 @@ export interface Article {
   /**
    * 发布时间
    */
-  publishOn: string;
+  publishOn: number;
   /**
    * 文章内容
    */
@@ -115,11 +115,11 @@ export interface Article {
   /**
    * 文章的更新时间
    */
-  lastUpdateTime: string;
+  lastUpdateTime: number;
   /**
    * 文章的创建时间
    */
-  createTime: string;
+  createTime: number;
   /**
    * 当前文章的语种
    * 0 中文 1 英文 以此类推

@@ -120,7 +120,8 @@ export const queryArticlePublish = async (name: string, hash: string) => {
   const params = queryPublishOnStatus(name, hash);
   try {
     const data = await ddbClient.send(new QueryCommand(params));
-    return data;
+    const items = data.Items?.map((item) => unmarshall(item));
+    return items;
   } catch (error) {
     console.error(error, "查询出错了");
     return null;
@@ -131,19 +132,22 @@ export const queryUserIdStatus = async (name: string, uid: string) => {
   const params = queryUserId(name, uid);
   try {
     const data = await ddbClient.send(new QueryCommand(params));
-    return data;
+    const items = data.Items?.map((item) => unmarshall(item));
+    return items;
   } catch (error) {
     console.error(error, "查询用户出错了");
     return null;
   }
 };
-// 查询某个用户最新的文章
 
-export const queryUsersNewArticle = async (name: string, cid: string) => {
-  const params = queryCurrentUserNewArticle(name, cid);
+// 查询当前文章是否存在
+
+export const queryUsersNewArticle = async (name: string, hashid: string) => {
+  const params = queryCurrentUserNewArticle(name, hashid);
   try {
     const data = await ddbClient.send(new QueryCommand(params));
-    return data;
+    const items = data.Items?.map((item) => unmarshall(item));
+    return items;
   } catch (error) {
     console.error(error, "查询用户出错了");
     return null;

@@ -78,13 +78,12 @@ export const queryAutoInCreIdValue = (name: string, id: string) => {
 };
 
 //查询当前用户的最新文章
-export const queryCurrentUserNewArticle = (name: string, cid: string) => {
+export const queryCurrentUserNewArticle = (name: string, hashid: string) => {
   return {
     TableName: name,
-    IndexName: "cid-index", // 使用 cid-publishon 索引进行查询
-    KeyConditionExpression: "cid = :cid",
+    KeyConditionExpression: "hashid = :hashid",
     ExpressionAttributeValues: {
-      ":cid": { S: cid },
+      ":hashid": { S: hashid },
     },
     ScanIndexForward: false, // 倒序排序
     Limit: 1, // 返回最新的文章

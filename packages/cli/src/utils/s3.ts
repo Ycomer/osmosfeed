@@ -1,10 +1,8 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { Article } from "../types";
 import { querySpecificTableData } from "../lib/awsDynamodb";
-import { Upload } from "@aws-sdk/lib-storage";
 import { updateFlagStatus } from "./dataBaseOperation";
 import { PageInfo } from "../constant";
-import { lookup } from "mime-types";
 const client = new S3Client({
   region: process.env.STATIC_REGION,
 });

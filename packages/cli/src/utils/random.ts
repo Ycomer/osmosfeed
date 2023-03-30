@@ -20,8 +20,8 @@ function hashUniqueId(title: string) {
   return Md5.hashStr(title);
 }
 
-function getCurrentTime(time?: string) {
-  return time ? dayjs(time).valueOf().toString() : dayjs().valueOf().toString();
+function getCurrentTime(time?: number) {
+  return time ? dayjs(time).valueOf() : dayjs().valueOf();
 }
 
 function getIdWithType(type: number) {

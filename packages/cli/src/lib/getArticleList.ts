@@ -84,29 +84,20 @@ const getArticleList = async (colum: ArticleSource): Promise<Article[]> => {
             console.log(richArtcle, "richArtcle");
             // 查询作者是否已经写入
             const resUser = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
-            // 查询当前用户最新的文章
-            const resArticle = await queryUsersNewArticle("ARTICLE", richArtcle.enrichedArticle.cid);
-
-            if (resArticle) {
-              const { Count: articleCount, Items } = resArticle;
-              if (
-                articleCount > 0 &&
-                Number(richArtcle.enrichedArticle.publishOn) > Number(Items && Items[0].publishon.S)
-              ) {
-                endFlag = true;
-                break;
-              } else {
-                await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
-                //库里没有才插入
-                finalAtcile.push(richArtcle.enrichedArticle);
-              }
+            // 查询当前文章是否存在
+            const resArticle = await queryUsersNewArticle("ARTICLE", richArtcle.enrichedArticle.hashId);
+            console.log(resArticle, "resArticle");
+            if (resArticle?.length > 0) {
+              endFlag = true;
+              break;
+            } else {
+              await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+              //库里没有才插入
+              finalAtcile.push(richArtcle.enrichedArticle);
             }
 
-            if (resUser) {
-              const { Count: userCount, Items: userItems } = resUser;
-              if (userCount === 0) {
-                await putDataToUserDB(richArtcle.enrichUser, "USER");
-              }
+            if (resUser.length === 0) {
+              await putDataToUserDB(richArtcle.enrichUser, "USER");
             }
           } catch (error) {
             console.log(error, "error");

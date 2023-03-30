@@ -28,7 +28,7 @@ const parseArticle = async (element: any, colum: ArticleSource) => {
   if (imgUrl) {
     article.imgUrl = await uploadImageAndGetPath(imgUrl);
   } else {
-    article.imgUrl = "";
+    article.imgUrl = await uploadImageAndGetPath(colum.logo);
   }
   article.url = await element.$eval(".topic-body a", (url) => url.href || "");
   article.lang = colum.lang;
@@ -37,35 +37,6 @@ const parseArticle = async (element: any, colum: ArticleSource) => {
   return article;
 };
 
-// 解析详情页文章数据 并替换文章的图片信息
-// const parseDetail = async (url: any) => {
-//   const browser = await puppeteer.launch();
-//   const pageInstance = await browser.newPage();
-//   await pageInstance.goto(url, { waitUntil: "domcontentloaded" });
-//   const imageElements = await pageInstance.$$(".topic-content .topic-content-right img[src]");
-//   const imageUrls = await Promise.all(imageElements.map((img) => img.evaluate((i) => i.src)));
-//   const imagePaths = await uploadImageAndGetPathFromList(imageUrls);
-//   // 更新详情页面中的所有图片链接
-//   for (let i = 0; i < imagePaths.length; i++) {
-//     const img = imagePaths[i];
-//     await pageInstance.evaluate(
-//       (el, url) => {
-//         el.src = url;
-//       },
-//       img,
-//       url[i]
-//     );
-//   }
-
-//   await pageInstance.$eval("p", (p) => {
-//     if (p) {
-//       p.removeAttribute("class");
-//     }
-//   });
-//   const content = await pageInstance.$eval(".detail-body", (content) => content.innerHTML || "");
-//   await browser.close();
-//   return content;
-// };
 const parseDetail = async (url: any) => {
   const data = await axios.get(url);
   const $ = Cheerio.load(data.data);
@@ -120,28 +91,18 @@ const getTopicList = async (colum: ArticleSource): Promise<Article[]> => {
             // 查询作者是否已经写入
             const resUser = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
             // 查询当前用户最新的文章
-            const resArticle = await queryUsersNewArticle("ARTICLE", richArtcle.enrichedArticle.cid);
-
-            if (resArticle) {
-              const { Count: articleCount, Items } = resArticle;
-              if (
-                articleCount > 0 &&
-                Number(richArtcle.enrichedArticle.publishOn) > Number(Items && Items[0].publishon.S)
-              ) {
-                endFlag = true;
-                break;
-              } else {
-                await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
-                //库里没有才插入
-                finalAtcile.push(richArtcle.enrichedArticle);
-              }
+            const resArticle = await queryUsersNewArticle("ARTICLE", richArtcle.enrichedArticle.hashId);
+            if (resArticle?.length > 0) {
+              endFlag = true;
+              break;
+            } else {
+              await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+              //库里没有才插入
+              finalAtcile.push(richArtcle.enrichedArticle);
             }
 
-            if (resUser) {
-              const { Count: userCount, Items: userItems } = resUser;
-              if (userCount === 0) {
-                await putDataToUserDB(richArtcle.enrichUser, "USER");
-              }
+            if (resUser.length === 0) {
+              await putDataToUserDB(richArtcle.enrichUser, "USER");
             }
           } catch (error) {
             console.log(error, "error");

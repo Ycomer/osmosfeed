@@ -43,19 +43,13 @@ export async function checkAndUploadNews(list: ColumnArticle[], source: Source) 
       const resArticle = await queryArticlePublish("ARTICLE", richArtcle.enrichedArticle.hashId);
       // 查询作者是否已经写入
       const resUser = await queryUserIdStatus("USER", richArtcle.enrichUser.uid);
-      if (resArticle) {
-        const { Count, Items: currentItems } = resArticle;
-        if (currentItems.length === 0) {
-          // 表里没有这个hash文章，直接插入
-          await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
-          finalAtcile.push(richArtcle.enrichedArticle);
-        }
+      if (resArticle?.length === 0) {
+        // 表里没有这个hash文章，直接插入
+        await putDatasToDB(richArtcle.enrichedArticle, "ARTICLE");
+        finalAtcile.push(richArtcle.enrichedArticle);
       }
-      if (resUser) {
-        const { Count: userCount, Items: userItems } = resUser;
-        if (userCount === 0) {
-          await putDataToUserDB(richArtcle.enrichUser, "USER");
-        }
+      if (resUser?.length === 0) {
+        await putDataToUserDB(richArtcle.enrichUser, "USER");
       }
     } catch (error) {
       console.log(error, "error");
